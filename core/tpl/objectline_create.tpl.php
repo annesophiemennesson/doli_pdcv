@@ -284,11 +284,11 @@ if ($nolinesbefore) {
 					$alsoproductwithnosupplierprice = 0;
 				} else {
 					$ajaxoptions = array(
-						'update' => array('remise_percent' => 'discount', 'price_ht' => 'price_ht')			// html id tags that will be edited with each ajax json response key
+						'update' => array('remise_percent' => 'discount', 'price_ht' => 'price_ht', 'stock' => 'stock')			// html id tags that will be edited with each ajax json response key
 					);
 					$alsoproductwithnosupplierprice = 1;
 				}
-				$form->select_produits_fournisseurs($object->socid, GETPOST('idprodfournprice'), 'idprodfournprice', '', '', $ajaxoptions, 1, $alsoproductwithnosupplierprice, 'minwidth300imp maxwidth500');
+				$form->select_produits_fournisseurs($object->socid, GETPOST('idprodfournprice'), 'idprodfournprice', '', '', $ajaxoptions, 1, $alsoproductwithnosupplierprice, 'minwidth300imp maxwidth500', '', 'INNER');
 				if (!empty($conf->global->MAIN_AUTO_OPEN_SELECT2_ON_FOCUS_FOR_SUPPLIER_PRODUCTS)) {
 					?>
 				<script>

@@ -1,0 +1,48 @@
+# Dolibarr language file - fr_FR - Extraprice
+CHARSET=UTF-8
+
+##ADMIN
+NothingToSetup=Activez le module pour accéder à la page de configuration
+GeneralSetup=Paramètres généraux
+GeneralSetting=Paramètres généraux
+PatasTools=Outils Patas-M
+PatasToolsNews=Retrouvez ici les informations de patas-monkey.com (nécessite une connexion à internet)
+PatasMonkeyPresent=Ce module est une création des patas-monkey, une documentation de celui-ci est disponible sur notre site
+MoreModulesLink=Vous pouvez trouver tous nos développements sur le dolistore
+SettingIsOnToolsMenu=Le module ne nécessite pas de paramétrage particulier. <br/>Ses fonctionnalités sont accessibles depuis le menu principal 'Outils Patas-M'.
+BackToModuleList=Retour à la liste des modules
+NewVersionAviable=Une nouvelle version du module est disponible
+NumberVersion=Version
+MonthVersion=Mois de publication
+ChangesVersion=Principales modifications apportées
+
+##ABOUT
+About=À propos
+Slogan=Développement, support et formation pour Dolibarr
+LienModules=Nos modules
+LienServices=Nos services
+LienDoc=Nos documentations
+LienDolistore=Retrouvez nos autres modules
+Changelog=ChangeLog du module
+SupportModuleInformation=Informations techniques
+SupportModuleInformationDesc=<br/><em>Note : Ces informations sont utiles et pourront vous être demandées si vous rencontrez un bug dans le fonctionnement du module.</em>
+DolibarrVersion=Version de Dolibarr
+ModuleVersion=Version du module
+PHPVersion=Version de PHP
+DatabaseVersion=Version de la base de données
+WebServerVersion=Version du serveur web
+
+extraPricePresentation=Détermination personnalisée du prix de vente avec d'autres champs
+ExtraPriceSetup=Configuration du module Extraprice
+ExtrapriceFormulaSetting=Paramétrage de la formule de calcul du prix
+ExtrapriceFormula=Formule de calcul
+ExtrapriceExplication='$newprice' correspond au prix de vente calculées '$origineprice' au prix de départ, les autres zones sont expliquées dans la documentation
+
+ExtrapriceProductTVAEXport=Facturation de la TVA pour les importations
+ProductTVAExportExplication=La sélection un produit/service permet de ne saisir que de la TVA pour les sociétés de transports
+MoreModules=Autres Modules
+MoreModulesLink=Nos autres modules 
+RefreshExtraprice=Mettre à jour les prix
+extrapriceGeneralSetting=Paramètres généraux
+ExtraPriceSetup=Configuration du module extraPrice
+ExtraPrice=ExtraPrice

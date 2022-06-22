@@ -670,7 +670,6 @@ if ($action == 'create') {    // Create. Seems to no be used
 			/*
 			  * Documents generated
 			 */
-
 			$objectref = dol_sanitizeFileName($object->ref);
 			$filedir = $conf->expedition->dir_output."/receipt/".$objectref;
 			$urlsource = $_SERVER["PHP_SELF"]."?id=".$object->id;

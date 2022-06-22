@@ -482,7 +482,7 @@ if (GETPOSTISSET("search_status")) {
 		$titre = $langs->trans("MembersListToValid");
 	}
 	if ($search_status == Adherent::STATUS_VALIDATED && $filter == '') {
-		$titre = $langs->trans("MenuMembersValidated");
+		$titre = $langs->trans("MembersValidated");
 	}
 	if ($search_status == Adherent::STATUS_VALIDATED && $filter == 'withoutsubscription') {
 		$titre = $langs->trans("MembersWithSubscriptionToReceive");

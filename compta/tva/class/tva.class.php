@@ -125,7 +125,6 @@ class Tva extends CommonObject
 
 		// Insert request
 		$sql = "INSERT INTO ".MAIN_DB_PREFIX."tva(";
-		$sql .= "entity,";
 		$sql .= "datec,";
 		$sql .= "datep,";
 		$sql .= "datev,";
@@ -137,7 +136,6 @@ class Tva extends CommonObject
 		$sql .= "fk_user_creat,";
 		$sql .= "fk_user_modif";
 		$sql .= ") VALUES (";
-		$sql .= " ".((int) $conf->entity).", ";
 		$sql .= " '".$this->db->idate($now)."',";
 		$sql .= " '".$this->db->idate($this->datep)."',";
 		$sql .= " '".$this->db->idate($this->datev)."',";
@@ -146,8 +144,8 @@ class Tva extends CommonObject
 		$sql .= " '".$this->db->escape($this->note)."',";
 		$sql .= " '".$this->db->escape($this->fk_account)."',";
 		$sql .= " '".$this->db->escape($this->type_payment)."',";
-		$sql .= " ".($this->fk_user_creat > 0 ? (int) $this->fk_user_creat : (int) $user->id).",";
-		$sql .= " ".($this->fk_user_modif > 0 ? (int) $this->fk_user_modif : (int) $user->id);
+		$sql .= " '".($this->fk_user_creat > 0 ? (int) $this->fk_user_creat : (int) $user->id)."',";
+		$sql .= " '".$this->db->escape($this->fk_user_modif)."'";
 		$sql .= ")";
 
 		dol_syslog(get_class($this)."::create", LOG_DEBUG);

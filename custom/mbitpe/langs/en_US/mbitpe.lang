@@ -1,0 +1,71 @@
+# Copyright (C) 2020      MB Informatique      <info@mb-informatique.fr>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Generic
+#
+# Module label 'ModuleMBITPEName'
+ModuleMBITPEName = MBI TPE
+# Module description 'ModuleMBITPEDesc'
+ModuleMBITPEDesc = Payments management with POS terminal
+
+#
+# Admin page
+#
+MBITPESetup = MBI TPE setup
+Settings = Settings
+MBITPESetupPage = MBI TPE setup page
+MBI_TERMINAL_NAME1 = Terminal 1 name
+MBI_TERMINAL_IP1 = Terminal 1 IP
+MBI_TERMINAL_PORT1 = Terminal 1 port
+MBI_TERMINAL_NAME2 = Terminal 2 name
+MBI_TERMINAL_IP2 = Terminal 2 IP
+MBI_TERMINAL_PORT2 = Terminal 2 port
+MBI_TERMINAL_NAME3 = Terminal 3 name
+MBI_TERMINAL_IP3 = Terminal 3 IP
+MBI_TERMINAL_PORT3 = Terminal 2 port
+MBI_TERMINAL_DEFAULT_BANK = Terminal payments bank
+MBITPESocketOK = The sockets PHP extension is activated
+MBITPESocketKO = Warning ! The sockets PHP extension is not activated ! The module can't work without this extension
+
+MBI_TERMINAL_NAME = Terminal name
+MBI_TERMINAL_IP = Terminal IP
+MBI_TERMINAL_PORT = Terminal port
+
+#
+# About page
+#
+About = About
+MBITPEAbout = About MBI TPE
+MBITPEAboutPage = MBI TPE about page
+
+#
+# Hook
+#
+MBITPEPaymentButton1 = Terminal Payment
+MBITPEOperationPerformed = Operation performed
+MBITPEOperationNotPerformed = Operation not performed
+MBITPEFollowInstructions = Follow instructions on the terminal
+MBITPESOCKETERROR = The sockets PHP extension is not activated
+MBITPECREATEERROR = Connection creation failed
+MBITPECONNECTIONERROR = Terminal connection failed
+MBITPEWRITEERROR = Writing data to terminal failed
+
+#
+# Update
+#
+MBI_UPTODATE = The module is up to date
+MBI_UPDATE_AVAILABLE = Update available !
+MBI_DOWNLOAD_HERE = Download it here !

@@ -471,9 +471,10 @@ if (empty($reshook)) {
 				$subject = $societeName." - ".$langs->transnoentitiesnoconv("HolidaysToValidate");
 
 				// Content
-				$message = "<p>".$langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",</p>\n";
+				$message = $langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",\n";
+				$message .= "\n";
 
-				$message .= "<p>".$langs->transnoentities("HolidaysToValidateBody")."</p>\n";
+				$message .= $langs->transnoentities("HolidaysToValidateBody")."\n";
 
 
 				// option to warn the validator in case of too short delay
@@ -483,7 +484,8 @@ if (empty($reshook)) {
 						$nowplusdelay = dol_time_plus_duree($now, $delayForRequest, 'd');
 
 						if ($object->date_debut < $nowplusdelay) {
-							$message = "<p>".$langs->transnoentities("HolidaysToValidateDelay", $delayForRequest)."</p>\n";
+							$message .= "\n";
+							$message .= $langs->transnoentities("HolidaysToValidateDelay", $delayForRequest)."\n";
 						}
 					}
 				}
@@ -493,21 +495,20 @@ if (empty($reshook)) {
 					$nbopenedday = num_open_day($object->date_debut_gmt, $object->date_fin_gmt, 0, 1, $object->halfday);
 
 					if ($nbopenedday > $object->getCPforUser($object->fk_user, $object->fk_type)) {
-						$message .= "<p>".$langs->transnoentities("HolidaysToValidateAlertSolde")."</p>\n";
+						$message .= "\n";
+						$message .= $langs->transnoentities("HolidaysToValidateAlertSolde")."\n";
 					}
 				}
 
-				$link = dol_buildpath("/holiday/card.php", 3) . '?id='.$object->id;
-
-				$message .= "<ul>";
-				$message .= "<li>".$langs->transnoentitiesnoconv("Name")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."</li>\n";
-				$message .= "<li>".$langs->transnoentitiesnoconv("Period")." : ".dol_print_date($object->date_debut, 'day')." ".$langs->transnoentitiesnoconv("To")." ".dol_print_date($object->date_fin, 'day')."</li>\n";
-				$message .= "<li>".$langs->transnoentitiesnoconv("Link").' : <a href="'.$link.'" target="_blank">'.$link."</a></li>\n";
-				$message .= "</ul>\n";
+				$message .= "\n";
+				$message .= "- ".$langs->transnoentitiesnoconv("Name")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."\n";
+				$message .= "- ".$langs->transnoentitiesnoconv("Period")." : ".dol_print_date($object->date_debut, 'day')." ".$langs->transnoentitiesnoconv("To")." ".dol_print_date($object->date_fin, 'day')."\n";
+				$message .= "- ".$langs->transnoentitiesnoconv("Link")." : ".$dolibarr_main_url_root."/holiday/card.php?id=".$object->id."\n\n";
+				$message .= "\n";
 
 				$trackid = 'leav'.$object->id;
 
-				$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 1, '', '', $trackid);
+				$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 0, '', '', $trackid);
 
 				// Sending the email
 				$result = $mail->sendfile();
@@ -616,20 +617,19 @@ if (empty($reshook)) {
 					$subject = $societeName." - ".$langs->transnoentitiesnoconv("HolidaysValidated");
 
 					// Content
-					$message = "<p>".$langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",</p>\n";
+					$message = $langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",\n";
+					$message .= "\n";
 
-					$message .= "<p>".$langs->transnoentities("HolidaysValidatedBody", dol_print_date($object->date_debut, 'day'), dol_print_date($object->date_fin, 'day'))."</p>\n";
+					$message .= $langs->transnoentities("HolidaysValidatedBody", dol_print_date($object->date_debut, 'day'), dol_print_date($object->date_fin, 'day'))."\n";
 
-					$link = dol_buildpath('/holiday/card.php', 3).'?id='.$object->id;
+					$message .= "- ".$langs->transnoentitiesnoconv("ValidatedBy")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."\n";
 
-					$message .= "<ul>\n";
-					$message .= "<li>".$langs->transnoentitiesnoconv("ValidatedBy")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."</li>\n";
-					$message .= "<li>".$langs->transnoentitiesnoconv("Link").' : <a href="'.$link.'" target="_blank">'.$link."</a></li>\n";
-					$message .= "</ul>\n";
+					$message .= "- ".$langs->transnoentitiesnoconv("Link")." : ".$dolibarr_main_url_root."/holiday/card.php?id=".$object->id."\n\n";
+					$message .= "\n";
 
 					$trackid = 'leav'.$object->id;
 
-					$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 1, '', '', $trackid);
+					$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 0, '', '', $trackid);
 
 					// Sending email
 					$result = $mail->sendfile();
@@ -697,21 +697,20 @@ if (empty($reshook)) {
 						$subject = $societeName." - ".$langs->transnoentitiesnoconv("HolidaysRefused");
 
 						// Content
-						$message = "<p>".$langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",</p>\n";
+						$message = $langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",\n";
+						$message .= "\n";
 
-						$message .= "<p>".$langs->transnoentities("HolidaysRefusedBody", dol_print_date($object->date_debut, 'day'), dol_print_date($object->date_fin, 'day'))."<p>\n";
-						$message .= "<p>".GETPOST('detail_refuse', 'alpha')."</p>";
+						$message .= $langs->transnoentities("HolidaysRefusedBody", dol_print_date($object->date_debut, 'day'), dol_print_date($object->date_fin, 'day'))."\n";
+						$message .= GETPOST('detail_refuse', 'alpha')."\n\n";
 
-						$link = dol_buildpath('/holiday/card.php', 3).'?id='.$object->id;
+						$message .= "- ".$langs->transnoentitiesnoconv("ModifiedBy")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."\n";
 
-						$message .= "<ul>\n";
-						$message .= "<li>".$langs->transnoentitiesnoconv("ModifiedBy")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."</li>\n";
-						$message .= "<li>".$langs->transnoentitiesnoconv("Link").' : <a href="'.$link.'" target="_blank">'.$link."</a></li>\n";
-						$message .= "</ul>";
+						$message .= "- ".$langs->transnoentitiesnoconv("Link")." : ".$dolibarr_main_url_root."/holiday/card.php?id=".$object->id."\n\n";
+						$message .= "\n";
 
 						$trackid = 'leav'.$object->id;
 
-						$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 1, '', '', $trackid);
+						$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 0, '', '', $trackid);
 
 						// sending email
 						$result = $mail->sendfile();
@@ -843,20 +842,18 @@ if (empty($reshook)) {
 				$subject = $societeName." - ".$langs->transnoentitiesnoconv("HolidaysCanceled");
 
 				// Content
-				$message = "<p>".$langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",</p>\n";
+				$message = $langs->transnoentitiesnoconv("Hello")." ".$destinataire->firstname.",\n";
+				$message .= "\n";
 
-				$message .= "<p>".$langs->transnoentities("HolidaysCanceledBody", dol_print_date($object->date_debut, 'day'), dol_print_date($object->date_fin, 'day'))."</p>\n";
+				$message .= $langs->transnoentities("HolidaysCanceledBody", dol_print_date($object->date_debut, 'day'), dol_print_date($object->date_fin, 'day'))."\n";
+				$message .= "- ".$langs->transnoentitiesnoconv("ModifiedBy")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."\n";
 
-				$link = dol_buildpath('/holiday/card.php', 3).'?id='.$object->id;
-
-				$message .= "<ul>\n";
-				$message .= "<li>".$langs->transnoentitiesnoconv("ModifiedBy")." : ".dolGetFirstLastname($expediteur->firstname, $expediteur->lastname)."</li>\n";
-				$message .= "<li>".$langs->transnoentitiesnoconv("Link").' : <a href="'.$link.'" target="_blank">'.$link."</a></li>\n";
-				$message .= "</ul>\n";
+				$message .= "- ".$langs->transnoentitiesnoconv("Link")." : ".$dolibarr_main_url_root."/holiday/card.php?id=".$object->id."\n\n";
+				$message .= "\n";
 
 				$trackid = 'leav'.$object->id;
 
-				$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 1, '', '', $trackid);
+				$mail = new CMailFile($subject, $emailTo, $emailFrom, $message, array(), array(), array(), '', '', 0, 0, '', '', $trackid);
 
 				// sending email
 				$result = $mail->sendfile();

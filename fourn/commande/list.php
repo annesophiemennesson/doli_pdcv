@@ -359,8 +359,6 @@ if (empty($reshook)) {
 
 		$db->begin();
 
-		$default_ref_supplier=dol_print_date(dol_now(), '%Y%m%d%H%M%S');
-
 		foreach ($orders as $id_order) {
 			$cmd = new CommandeFournisseur($db);
 			if ($cmd->fetch($id_order) <= 0) {
@@ -377,8 +375,9 @@ if (empty($reshook)) {
 				$objecttmp->mode_reglement_id	= $cmd->mode_reglement_id;
 				$objecttmp->fk_project = $cmd->fk_project;
 				$objecttmp->multicurrency_code = $cmd->multicurrency_code;
-				$objecttmp->ref_supplier = !empty($cmd->ref_supplier) ? $cmd->ref_supplier : $default_ref_supplier;
-				$default_ref_supplier+=1;
+				if (empty($createbills_onebythird)) {
+					$objecttmp->ref_client = $cmd->ref_client;
+				}
 
 				$datefacture = dol_mktime(12, 0, 0, GETPOST('remonth', 'int'), GETPOST('reday', 'int'), GETPOST('reyear', 'int'));
 				if (empty($datefacture)) {

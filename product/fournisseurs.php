@@ -40,6 +40,7 @@ require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/dynamic_price/class/price_expression.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/dynamic_price/class/price_parser.class.php';
+require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 if (!empty($conf->barcode->enabled)) {
 	dol_include_once('/core/class/html.formbarcode.class.php');
 }
@@ -315,6 +316,8 @@ if (empty($reshook)) {
 				}
 
 				$newprice = price2num(GETPOST("price", "alpha"));
+				$pv = price2num($newprice * $conf->global->MARGE);
+				$object->updatePrice($pv, $object->price_base_type, $user, $object->tva_tx);
 
 				if (empty($packaging)) {
 					$packaging = 1;

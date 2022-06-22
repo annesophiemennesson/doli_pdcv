@@ -826,9 +826,7 @@ class DolibarrModules // Can not be abstract, because we need to instantiate it 
 	}
 
 	/**
-	 * Tells if module is core or external.
-	 * 'dolibarr' and 'dolibarr_deprecated' is core
-	 * 'experimental' and 'development' is core
+	 * Tells if module is core or external
 	 *
 	 * @return string  'core', 'external' or 'unknown'
 	 */

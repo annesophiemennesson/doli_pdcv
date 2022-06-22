@@ -335,35 +335,35 @@ class modCommande extends DolibarrModules
 		}
 		// End add extra fields
 
-		$this->import_fieldshidden_array[$r] = array('extra.fk_object' => 'lastrowid-'.MAIN_DB_PREFIX.'commande');
-		$this->import_regex_array[$r] = array(
+		$this->import_fieldshidden_array[$r] = ['extra.fk_object' => 'lastrowid-'.MAIN_DB_PREFIX.'commande'];
+		$this->import_regex_array[$r] = [
 			'c.multicurrency_code' => 'code@'.MAIN_DB_PREFIX.'multicurrency'
-		);
+		];
 
-		$this->import_updatekeys_array[$r] = array('c.ref' => 'Ref');
-		$this->import_convertvalue_array[$r] = array(
-			'c.fk_soc' => array(
+		$this->import_updatekeys_array[$r] = ['c.ref' => 'Ref'];
+		$this->import_convertvalue_array[$r] = [
+			'c.fk_soc' => [
 				'rule'    => 'fetchidfromref',
 				'file'    => '/societe/class/societe.class.php',
 				'class'   => 'Societe',
 				'method'  => 'fetch',
 				'element' => 'ThirdParty'
-			),
-			'c.fk_user_valid' => array(
+			],
+			'c.fk_user_valid' => [
 				'rule'    => 'fetchidfromref',
 				'file'    => '/user/class/user.class.php',
 				'class'   => 'User',
 				'method'  => 'fetch',
 				'element' => 'user'
-			),
-			'c.fk_mode_reglement' => array(
+			],
+			'c.fk_mode_reglement' => [
 				'rule' => 'fetchidfromcodeorlabel',
 				'file' => '/compta/paiement/class/cpaiement.class.php',
 				'class' => 'Cpaiement',
 				'method' => 'fetch',
 				'element' => 'cpayment'
-			),
-		);
+			],
+		];
 
 		//Import CPV Lines
 		$r++;

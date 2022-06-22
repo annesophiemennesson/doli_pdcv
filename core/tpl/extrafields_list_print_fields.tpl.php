@@ -22,7 +22,7 @@ if (!empty($extrafieldsobjectkey) && !empty($extrafields->attributes[$extrafield
 				$cssclass = $extrafields->getAlignFlag($key, $extrafieldsobjectkey);
 
 				$tmpkey = 'options_'.$key;
-
+		
 				if (in_array($extrafields->attributes[$extrafieldsobjectkey]['type'][$key], array('date', 'datetime', 'timestamp')) && !is_numeric($obj->$tmpkey)) {
 					$datenotinstring = $obj->$tmpkey;
 					if (!is_numeric($obj->$tmpkey)) {	// For backward compatibility
@@ -43,6 +43,7 @@ if (!empty($extrafieldsobjectkey) && !empty($extrafields->attributes[$extrafield
 				}
 
 				$valuetoshow = $extrafields->showOutputField($key, $value, '', $extrafieldsobjectkey);
+				
 				$title = dol_string_nohtmltag($valuetoshow);
 
 				print '<td'.($cssclass ? ' class="'.$cssclass.'"' : '');	// TODO Add 'css' and 'cssview' and 'csslist' for extrafields and use here 'csslist'

@@ -1690,11 +1690,7 @@ class Product extends CommonObject
 		$testExit = array('multiprices','multiprices_ttc','multiprices_base_type','multiprices_min','multiprices_min_ttc','multiprices_tva_tx','multiprices_recuperableonly');
 
 		foreach ($testExit as $field) {
-			if (!isset($this->$field)) {
-				return array();
-			}
-			$tmparray = $this->$field;
-			if (!isset($tmparray[$level])) {
+			if (!isset($this->$field[$level])) {
 				return array();
 			}
 		}
@@ -2044,7 +2040,7 @@ class Product extends CommonObject
 
 
 	/**
-	 * Modify customer price of a product/Service for a given level
+	 * Modify customer price of a product/Service
 	 *
 	 * @param  double $newprice          New price
 	 * @param  string $newpricebase      HT or TTC
@@ -2216,8 +2212,7 @@ class Product extends CommonObject
 				$this->db->commit();
 			} else {
 				$this->db->rollback();
-				$this->error = $this->db->lasterror();
-				return -1;
+				dol_print_error($this->db);
 			}
 		}
 

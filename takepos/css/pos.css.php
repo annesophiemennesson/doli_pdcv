@@ -351,7 +351,7 @@ div.paymentbordline
 .row1withhead{
 	margin: 0 auto;
 	width: 100%;
-	height: calc(45% - 50px);
+	height: calc(60% - 50px);
 	padding-top: 9px;
 }
 
@@ -364,7 +364,7 @@ div.paymentbordline
 .row2withhead{
 	margin: 0 auto;
 	width: 100%;
-	height: 55%;
+	height: 40%;
 }
 
 .div1{

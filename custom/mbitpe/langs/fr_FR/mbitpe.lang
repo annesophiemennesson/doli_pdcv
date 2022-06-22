@@ -1,0 +1,71 @@
+# Copyright (C) 2020      MB Informatique      <info@mb-informatique.fr>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Générique
+#
+# Module label 'ModuleMBITPEName'
+ModuleMBITPEName = MBI TPE
+# Module description 'ModuleMBITPEDesc'
+ModuleMBITPEDesc = Module de gestion des paiements avec TPE
+
+#
+# Page d'administration
+#
+MBITPESetup = Configuration du module MBI TPE
+Settings = Réglages
+MBITPESetupPage = Page de configuration du module MBI TPE
+MBI_TERMINAL_NAME1 = Nom du terminal de paiement 1
+MBI_TERMINAL_IP1 = IP du terminal de paiement 1
+MBI_TERMINAL_PORT1 = Port TPE 1
+MBI_TERMINAL_NAME2 = Nom du terminal de paiement 2
+MBI_TERMINAL_IP2 = IP du terminal de paiement 2
+MBI_TERMINAL_PORT2 = Port TPE 2
+MBI_TERMINAL_NAME3 = Nom du terminal de paiement 3
+MBI_TERMINAL_IP3 = IP du terminal de paiement 3
+MBI_TERMINAL_PORT3 = Port TPE 3
+MBI_TERMINAL_DEFAULT_BANK = Banque pour les paiements TPE
+MBITPESocketOK = L'extension PHP sockets est activée
+MBITPESocketKO = Attention ! L'extension PHP sockets n'est pas activée ! Cette extension est nécessaire au bon fonctionnement du module
+
+MBI_TERMINAL_NAME = Nom du terminal de paiement
+MBI_TERMINAL_IP = IP du terminal de paiement
+MBI_TERMINAL_PORT = Port du terminal de paiement
+
+#
+# Page À propos
+#
+About = À propos
+MBITPEAbout = À propos de MBI TPE
+MBITPEAboutPage = Page à propos de MBI TPE
+
+#
+# Hook
+#
+MBITPEPaymentButton1 = Paiement Terminal
+MBITPEOperationPerformed = Opération effectuée
+MBITPEOperationNotPerformed = Opération échouée
+MBITPEFollowInstructions = Suivre les instructions sur le terminal
+MBITPESOCKETERROR = L'extension PHP socket n'est pas activée
+MBITPECREATEERROR = Echec de création de la connexion
+MBITPECONNECTIONERROR = Echec de connexion avec le terminal
+MBITPEWRITEERROR = Echec dans l'envoi des instructions au terminal
+
+#
+# Update
+#
+MBI_UPTODATE = Le module est à jour
+MBI_UPDATE_AVAILABLE = Mise à jour disponible !
+MBI_DOWNLOAD_HERE = Téléchargez la ici !

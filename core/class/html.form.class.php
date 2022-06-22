@@ -3053,9 +3053,10 @@ class Form
 	 *  @param  int     $alsoproductwithnosupplierprice    1=Add also product without supplier prices
 	 *  @param	string	$morecss		More CSS
 	 *  @param	string	$placeholder	Placeholder
+	 *  @param	string	$join			Indicates the type of join with the supplier table
 	 *	@return	void
 	 */
-	public function select_produits_fournisseurs($socid, $selected = '', $htmlname = 'productid', $filtertype = '', $filtre = '', $ajaxoptions = array(), $hidelabel = 0, $alsoproductwithnosupplierprice = 0, $morecss = '', $placeholder = '')
+	public function select_produits_fournisseurs($socid, $selected = '', $htmlname = 'productid', $filtertype = '', $filtre = '', $ajaxoptions = array(), $hidelabel = 0, $alsoproductwithnosupplierprice = 0, $morecss = '', $placeholder = '', $join = 'LEFT')
 	{
 		// phpcs:enable
 		global $langs, $conf;
@@ -3080,7 +3081,7 @@ class Form
 			print ajax_autocompleter($selected, $htmlname, DOL_URL_ROOT.'/product/ajax/products.php', $urloption, $conf->global->PRODUIT_USE_SEARCH_TO_SELECT, 0, $ajaxoptions);
 			print ($hidelabel ? '' : $langs->trans("RefOrLabel").' : ').'<input type="text" class="minwidth300" name="search_'.$htmlname.'" id="search_'.$htmlname.'" value="'.$selected_input_value.'"'.($placeholder ? ' placeholder="'.$placeholder.'"' : '').'>';
 		} else {
-			print $this->select_produits_fournisseurs_list($socid, $selected, $htmlname, $filtertype, $filtre, '', $status, 0, 0, $alsoproductwithnosupplierprice, $morecss, 0, $placeholder);
+			print $this->select_produits_fournisseurs_list($socid, $selected, $htmlname, $filtertype, $filtre, '', $status, 0, 0, $alsoproductwithnosupplierprice, $morecss, 1, $placeholder, $join);
 		}
 	}
 
@@ -3101,9 +3102,10 @@ class Form
 	 *  @param	string	$morecss			Add more CSS
 	 *  @param	int		$showstockinlist	Show stock information (slower).
 	 *  @param	string	$placeholder		Placeholder
+	 *  @param	string	$join				Indicates the type of join with the supplier table
 	 *  @return array           			Array of keys for json
 	 */
-	public function select_produits_fournisseurs_list($socid, $selected = '', $htmlname = 'productid', $filtertype = '', $filtre = '', $filterkey = '', $statut = -1, $outputmode = 0, $limit = 100, $alsoproductwithnosupplierprice = 0, $morecss = '', $showstockinlist = 0, $placeholder = '')
+	public function select_produits_fournisseurs_list($socid, $selected = '', $htmlname = 'productid', $filtertype = '', $filtre = '', $filterkey = '', $statut = -1, $outputmode = 0, $limit = 100, $alsoproductwithnosupplierprice = 0, $morecss = '', $showstockinlist = 0, $placeholder = '', $join = 'LEFT')
 	{
 		// phpcs:enable
 		global $langs, $conf, $db, $user;
@@ -3122,7 +3124,8 @@ class Form
 		$sql = "SELECT p.rowid, p.ref, p.label, p.price, p.duration, p.fk_product_type, p.stock,";
 		$sql .= " pfp.ref_fourn, pfp.rowid as idprodfournprice, pfp.price as fprice, pfp.quantity, pfp.remise_percent, pfp.remise, pfp.unitprice,";
 		$sql .= " pfp.fk_supplier_price_expression, pfp.fk_product, pfp.tva_tx, pfp.default_vat_code, pfp.fk_soc, s.nom as name,";
-		$sql .= " pfp.supplier_reputation";
+		$sql .= " pfp.supplier_reputation, IFNULL(SUM(fd.qty),0) as qte ";
+	
 		// if we use supplier description of the products
 		if (!empty($conf->global->PRODUIT_FOURN_TEXTS)) {
 			$sql .= " ,pfp.desc_fourn as description";
@@ -3136,8 +3139,8 @@ class Form
 		if (!empty($conf->barcode->enabled)) {
 			$sql .= ", pfp.barcode";
 		}
-		$sql .= " FROM ".MAIN_DB_PREFIX."product as p";
-		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON ( p.rowid = pfp.fk_product AND pfp.entity IN (".getEntity('product').") )";
+		$sql .= " FROM ".MAIN_DB_PREFIX."product as p ";
+		$sql .= $join." JOIN ".MAIN_DB_PREFIX."product_fournisseur_price as pfp ON ( p.rowid = pfp.fk_product AND pfp.entity IN (".getEntity('product').") )";
 		if ($socid > 0) {
 			$sql .= " AND pfp.fk_soc = ".((int) $socid);
 		}
@@ -3146,6 +3149,8 @@ class Form
 		if (!empty($conf->global->PRODUCT_USE_UNITS)) {
 			$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_units u ON u.rowid = p.fk_unit";
 		}
+		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."facturedet as fd ON (fd.fk_product = p.rowid) ";
+		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."facture as f ON (f.rowid = fd.fk_facture AND f.datec >= DATE_SUB(f.datec, INTERVAL ".$conf->global->NB_JOURS_STATS_CMD." DAY))  ";
 		$sql .= " WHERE p.entity IN (".getEntity('product').")";
 		if ($statut != -1) {
 			$sql .= " AND p.tobuy = ".((int) $statut);
@@ -3186,6 +3191,7 @@ class Form
 			}
 			$sql .= ')';
 		}
+		$sql .= " GROUP BY p.rowid ";
 		$sql .= " ORDER BY pfp.ref_fourn DESC, pfp.quantity ASC";
 		$sql .= $this->db->plimit($limit, 0);
 
@@ -3210,7 +3216,7 @@ class Form
 			$i = 0;
 			while ($i < $num) {
 				$objp = $this->db->fetch_object($result);
-
+			
 				$outkey = $objp->idprodfournprice; // id in table of price
 				if (!$outkey && $alsoproductwithnosupplierprice) {
 					$outkey = 'idprod_'.$objp->rowid; // id of product
@@ -3360,7 +3366,7 @@ class Form
 						$outvallabel .= ' - '.$langs->transnoentities("NoPriceDefinedForThisSupplier");
 					}
 				}
-
+				
 				if (!empty($conf->stock->enabled) && $showstockinlist && isset($objp->stock) && ($objp->fk_product_type == Product::TYPE_PRODUCT || !empty($conf->global->STOCK_SUPPORTS_SERVICES))) {
 					$novirtualstock = ($showstockinlist == 2);
 
@@ -3397,6 +3403,9 @@ class Form
 						}
 					}
 				}
+
+				$optlabel .= " - Qté vendue sur ".$conf->global->NB_JOURS_STATS_CMD."j :".$objp->qte;
+				$outvallabel .= " - Qté vendue sur ".$conf->global->NB_JOURS_STATS_CMD."j :".$objp->qte;
 
 				$opt = '<option value="'.$outkey.'"';
 				if ($selected && $selected == $objp->idprodfournprice) {
@@ -7101,13 +7110,11 @@ class Form
 
 			if ($selected && empty($selected_input_value)) {
 				require_once DOL_DOCUMENT_ROOT.'/adherents/class/adherent.class.php';
-				$adherenttmpselect = new Adherent($this->db);
+				$adherenttmpselect = new Member($this->db);
 				$adherenttmpselect->fetch($selected);
 				$selected_input_value = $adherenttmpselect->ref;
 				unset($adherenttmpselect);
 			}
-
-			$urloption = '';
 
 			$out .= ajax_autocompleter($selected, $htmlname, DOL_URL_ROOT.'/adherents/ajax/adherents.php', $urloption, $conf->global->PRODUIT_USE_SEARCH_TO_SELECT, 1, $ajaxoptions);
 
@@ -7123,9 +7130,7 @@ class Form
 				$out .= img_picto($langs->trans("Search"), 'search');
 			}
 		} else {
-			$filterkey = '';
-
-			$out .= $this->selectMembersList($selected, $htmlname, $filtertype, $limit, $filterkey, $status, 0, $showempty, $forcecombo, $morecss);
+			$out .= $this->selectMembersList($selected, $htmlname, $filtertype, $limit, $status, 0, $socid, $showempty, $forcecombo, $morecss);
 		}
 
 		if (empty($nooutput)) print $out;
@@ -7140,8 +7145,8 @@ class Form
 	 *	@param      string	$htmlname           Name of select html
 	 *  @param		string	$filtertype         Filter on adherent type
 	 *	@param      int		$limit              Limit on number of returned lines
-	 * 	@param      string	$filterkey          Filter on member status
-	 *	@param		int		$status             Member status
+	 * 	@param      string	$filterkey          Filter on adherent ref or subject
+	 *	@param		int		$status             Ticket status
 	 *  @param      int		$outputmode         0=HTML select string, 1=Array
 	 *  @param		string	$showempty		    '' to not show empty line. Translation key to show an empty line. '1' show empty line with no text.
 	 * 	@param		int		$forcecombo		    Force to use combo box
@@ -7155,7 +7160,7 @@ class Form
 		$out = '';
 		$outarray = array();
 
-		$selectFields = " p.rowid, p.ref, p.firstname, p.lastname";
+		$selectFields = " p.rowid, p.ref";
 
 		$sql = "SELECT ";
 		$sql .= $selectFields;
@@ -7165,23 +7170,21 @@ class Form
 		// Add criteria on ref/label
 		if ($filterkey != '') {
 			$sql .= ' AND (';
-			$prefix = empty($conf->global->MEMBER_DONOTSEARCH_ANYWHERE) ? '%' : ''; // Can use index if PRODUCT_DONOTSEARCH_ANYWHERE is on
+			$prefix = empty($conf->global->TICKET_DONOTSEARCH_ANYWHERE) ? '%' : ''; // Can use index if PRODUCT_DONOTSEARCH_ANYWHERE is on
 			// For natural search
 			$scrit = explode(' ', $filterkey);
 			$i = 0;
 			if (count($scrit) > 1) $sql .= "(";
 			foreach ($scrit as $crit) {
 				if ($i > 0) $sql .= " AND ";
-				$sql .= "(p.firstname LIKE '".$this->db->escape($prefix.$crit)."%'";
-				$sql .= " OR p.lastname LIKE '".$this->db->escape($prefix.$crit)."%')";
+				$sql .= "p.ref LIKE '".$this->db->escape($prefix.$crit)."%'";
+				$sql .= "";
 				$i++;
 			}
 			if (count($scrit) > 1) $sql .= ")";
 			$sql .= ')';
 		}
-		if ($status != -1) {
-			$sql .= ' AND statut = '.((int) $status);
-		}
+
 		$sql .= $this->db->plimit($limit, 0);
 
 		// Build output string
@@ -7211,9 +7214,7 @@ class Form
 			} else {
 				if ($showempty && !is_numeric($showempty)) $textifempty = $langs->trans($showempty);
 			}
-			if ($showempty) {
-				$out .= '<option value="-1" selected>'.$textifempty.'</option>';
-			}
+			if ($showempty) $out .= '<option value="0" selected>'.$textifempty.'</option>';
 
 			$i = 0;
 			while ($num && $i < $num) {
@@ -7222,7 +7223,6 @@ class Form
 				$objp = $this->db->fetch_object($result);
 
 				$this->constructMemberListOption($objp, $opt, $optJson, $selected, $filterkey);
-
 				// Add new entry
 				// "key" value of json key array is used by jQuery automatically as selected value
 				// "label" value of json key array is used by jQuery automatically as text for combo box
@@ -7259,23 +7259,28 @@ class Form
 		global $langs, $conf, $user, $db;
 
 		$outkey = '';
+		$outval = '';
+		$outref = '';
 		$outlabel = '';
 		$outtype = '';
 
+		$label = $objp->label;
+
 		$outkey = $objp->rowid;
-		$outlabel = dolGetFirstLastname($objp->firstname, $objp->lastname);
-		$outtype = $objp->fk_adherent_type;
+		$outref = $objp->ref;
+		$outlabel = $objp->label;
+		$outtype = $objp->fk_product_type;
 
 		$opt = '<option value="'.$objp->rowid.'"';
 		$opt .= ($objp->rowid == $selected) ? ' selected' : '';
 		$opt .= '>';
-		if (!empty($filterkey) && $filterkey != '') {
-			$outlabel = preg_replace('/('.preg_quote($filterkey, '/').')/i', '<strong>$1</strong>', $outlabel, 1);
-		}
-		$opt .= $outlabel;
-		$opt .= "</option>\n";
+		$opt .= $objp->ref;
+		$objRef = $objp->ref;
+		if (!empty($filterkey) && $filterkey != '') $objRef = preg_replace('/('.preg_quote($filterkey, '/').')/i', '<strong>$1</strong>', $objRef, 1);
+		$outval .= $objRef;
 
-		$optJson = array('key'=>$outkey, 'value'=>$outlabel, 'type'=>$outtype);
+		$opt .= "</option>\n";
+		$optJson = array('key'=>$outkey, 'value'=>$outref, 'type'=>$outtypem);
 	}
 
 	/**
@@ -8408,7 +8413,7 @@ class Form
 	public function showLinkToObjectBlock($object, $restrictlinksto = array(), $excludelinksto = array())
 	{
 		global $conf, $langs, $hookmanager;
-		global $action;
+		global $bc, $action;
 
 		$linktoelem = '';
 		$linktoelemlist = '';
@@ -8454,10 +8459,11 @@ class Form
 			);
 		}
 
+		// Can complete the possiblelink array
+		$hookmanager->initHooks(array('commonobject'));
+		$parameters = array('listofidcompanytoscan' => $listofidcompanytoscan);
+
 		if (!empty($listofidcompanytoscan)) {  // If empty, we don't have criteria to scan the object we can link to
-			// Can complete the possiblelink array
-			$hookmanager->initHooks(array('commonobject'));
-			$parameters = array('listofidcompanytoscan' => $listofidcompanytoscan, 'possiblelinks' => $possiblelinks);
 			$reshook = $hookmanager->executeHooks('showLinkToObjectBlock', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 		}
 
@@ -9104,12 +9110,12 @@ class Form
 				if (!empty($conf->gravatar->enabled) && $email && empty($noexternsourceoverwrite)) {
 					// see https://gravatar.com/site/implement/images/php/
 					$ret .= '<!-- Put link to gravatar -->';
-					$ret .= '<img class="photo'.$modulepart.($cssclass ? ' '.$cssclass : '').'" alt="" title="'.$email.' Gravatar avatar" '.($width ? ' width="'.$width.'"' : '').($height ? ' height="'.$height.'"' : '').' src="https://www.gravatar.com/avatar/'.md5(strtolower(trim($email))).'?s='.$width.'&d='.$defaultimg.'">'; // gravatar need md5 hash
+					$ret .= '<img class="photo'.$modulepart.($cssclass ? ' '.$cssclass : '').'" alt="Gravatar avatar" title="'.$email.' Gravatar avatar" '.($width ? ' width="'.$width.'"' : '').($height ? ' height="'.$height.'"' : '').' src="https://www.gravatar.com/avatar/'.md5(strtolower(trim($email))).'?s='.$width.'&d='.$defaultimg.'">'; // gravatar need md5 hash
 				} else {
 					if ($nophoto == 'company') {
-						$ret .= '<div class="photo'.$modulepart.($cssclass ? ' '.$cssclass : '').'" alt="" '.($width ? ' width="'.$width.'"' : '').($height ? ' height="'.$height.'"' : '').'">'.img_picto('', 'company').'</div>';
+						$ret .= '<div class="photo'.$modulepart.($cssclass ? ' '.$cssclass : '').'" alt="No photo" '.($width ? ' width="'.$width.'"' : '').($height ? ' height="'.$height.'"' : '').'">'.img_picto('', 'company').'</div>';
 					} else {
-						$ret .= '<img class="photo'.$modulepart.($cssclass ? ' '.$cssclass : '').'" alt="" '.($width ? ' width="'.$width.'"' : '').($height ? ' height="'.$height.'"' : '').' src="'.DOL_URL_ROOT.$nophoto.'">';
+						$ret .= '<img class="photo'.$modulepart.($cssclass ? ' '.$cssclass : '').'" alt="No photo" '.($width ? ' width="'.$width.'"' : '').($height ? ' height="'.$height.'"' : '').' src="'.DOL_URL_ROOT.$nophoto.'">';
 					}
 				}
 			}

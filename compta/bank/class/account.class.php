@@ -513,10 +513,9 @@ class Account extends CommonObject
 	 *  @param	string		$accountancycode	When we record a free bank entry, we must provide accounting account if accountancy module is on.
 	 *  @param	int			$datev			Date value
 	 *  @param  string      $num_releve     Label of bank receipt for reconciliation
-	 *  @param	float		$amount_main_currency	Amount
 	 *  @return	int							Rowid of added entry, <0 if KO
 	 */
-	public function addline($date, $oper, $label, $amount, $num_chq, $categorie, User $user, $emetteur = '', $banque = '', $accountancycode = '', $datev = null, $num_releve = '', $amount_main_currency = null)
+	public function addline($date, $oper, $label, $amount, $num_chq, $categorie, User $user, $emetteur = '', $banque = '', $accountancycode = '', $datev = null, $num_releve = '')
 	{
 		// Deprecation warning
 		if (is_numeric($oper)) {
@@ -574,7 +573,6 @@ class Account extends CommonObject
 		$accline->datev = $datev;
 		$accline->label = $label;
 		$accline->amount = $amount;
-		$accline->amount_main_currency = $amount_main_currency;
 		$accline->fk_user_author = $user->id;
 		$accline->fk_account = $this->id;
 		$accline->fk_type = $oper;
@@ -1443,13 +1441,9 @@ class Account extends CommonObject
 
 		// Call function to check BAN
 
-		if (!checkIbanForAccount($this)) {
+		if (!checkIbanForAccount($this) || !checkSwiftForAccount($this)) {
 			$this->error_number = 12;
-			$this->error_message = 'IBANNotValid';
-		}
-		if (!checkSwiftForAccount($this)) {
-			$this->error_number = 12;
-			$this->error_message = 'SwiftNotValid';
+			$this->error_message = 'IBANSWIFTControlError';
 		}
 		/*if (! checkBanForAccount($this))
 		{
@@ -1791,8 +1785,7 @@ class AccountLine extends CommonObject
 	 */
 	public $datev;
 
-	public $amount;					/* Amount of payment in the bank account currency */
-	public $amount_main_currency;	/* Amount in the currency of company if bank account use another currency */
+	public $amount;
 
 	/**
 	 * @var int ID
@@ -1953,7 +1946,6 @@ class AccountLine extends CommonObject
 		$sql .= ", datev";
 		$sql .= ", label";
 		$sql .= ", amount";
-		$sql .= ", amount_main_currency";
 		$sql .= ", fk_user_author";
 		$sql .= ", num_chq";
 		$sql .= ", fk_account";
@@ -1968,8 +1960,7 @@ class AccountLine extends CommonObject
 		$sql .= ", '".$this->db->idate($this->datev)."'";
 		$sql .= ", '".$this->db->escape($this->label)."'";
 		$sql .= ", ".price2num($this->amount);
-		$sql .= ", ".(empty($this->amount_main_currency) ? "NULL" : price2num($this->amount_main_currency));
-		$sql .= ", ".($this->fk_user_author > 0 ? ((int) $this->fk_user_author) : "null");
+		$sql .= ", ".($this->fk_user_author > 0 ? $this->fk_user_author : "null");
 		$sql .= ", ".($this->num_chq ? "'".$this->db->escape($this->num_chq)."'" : "null");
 		$sql .= ", '".$this->db->escape($this->fk_account)."'";
 		$sql .= ", '".$this->db->escape($this->fk_type)."'";

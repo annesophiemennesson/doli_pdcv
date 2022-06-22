@@ -1846,7 +1846,7 @@ if ($action == 'create') {
 	$currency_code = $conf->currency;
 
 	$societe = '';
-	if (GETPOST('socid', 'int') > 0) {
+	if (GETPOST('socid') > 0) {
 		$societe = new Societe($db);
 		$societe->fetch(GETPOST('socid', 'int'));
 		if (!empty($conf->multicurrency->enabled) && !empty($societe->multicurrency_code)) {
@@ -3014,7 +3014,7 @@ if ($action == 'create') {
 		}
 		// Show link for "recalculate"
 		if ($object->getVentilExportCompta() == 0) {
-			$s = '<span class="opacitymedium">'.$langs->trans("ReCalculate").'</span> ';
+			$s = $langs->trans("ReCalculate").' ';
 			$s .= '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&action=calculate&calculationrule=totalofround">'.$langs->trans("Mode1").'</a>';
 			$s .= ' / ';
 			$s .= '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&action=calculate&calculationrule=roundoftotal">'.$langs->trans("Mode2").'</a>';
@@ -3285,9 +3285,10 @@ if ($action == 'create') {
 			// Remainder to pay
 			print '<tr><td colspan="'.$nbcols.'" class="right">';
 			print '<span class="opacitymedium">';
-			print $langs->trans('RemainderToPay');
-			if ($resteapayeraffiche < 0) {
-				print ' ('.$langs->trans('NegativeIfExcessPaid').')';
+			if ($resteapayeraffiche >= 0) {
+				print $langs->trans('RemainderToPay');
+			} else {
+				print $langs->trans('ExcessPaid');
 			}
 			print '</span>';
 			print '</td>';
@@ -3297,9 +3298,10 @@ if ($action == 'create') {
 			if ($object->multicurrency_code != $conf->currency || $object->multicurrency_tx != 1) {
 				print '<tr><td colspan="'.$nbcols.'" class="right">';
 				print '<span class="opacitymedium">';
-				print $langs->trans('RemainderToPayMulticurrency');
-				if ($resteapayeraffiche < 0) {
-					print ' ('.$langs->trans('NegativeIfExcessPaid').')';
+				if ($resteapayeraffiche <= 0) {
+					print $langs->trans('RemainderToPayBackMulticurrency');
+				} else {
+					print $langs->trans('ExcessPaidMulticurrency');
 				}
 				print '</span>';
 				print '</td>';
@@ -3320,9 +3322,10 @@ if ($action == 'create') {
 			// Remainder to pay back
 			print '<tr><td colspan="'.$nbcols.'" class="right">';
 			print '<span class="opacitymedium">';
-			print $langs->trans('RemainderToPayBack');
-			if ($resteapayeraffiche > 0) {
-				print ' ('.$langs->trans('NegativeIfExcessRefunded').')';
+			if ($resteapayeraffiche <= 0) {
+				print $langs->trans('RemainderToPayBack');
+			} else {
+				print $langs->trans('ExcessPaid');
 			}
 			print '</td>';
 			print '</span>';
@@ -3332,9 +3335,10 @@ if ($action == 'create') {
 			if ($object->multicurrency_code != $conf->currency || $object->multicurrency_tx != 1) {
 				print '<tr><td colspan="'.$nbcols.'" class="right">';
 				print '<span class="opacitymedium">';
-				print $langs->trans('RemainderToPayBackMulticurrency');
-				if ($resteapayeraffiche> 0) {
-					print ' ('.$langs->trans('NegativeIfExcessRefunded').')';
+				if ($resteapayeraffiche <= 0) {
+					print $langs->trans('RemainderToPayBackMulticurrency');
+				} else {
+					print $langs->trans('ExcessPaidMulticurrency');
 				}
 				print '</span>';
 				print '</td>';

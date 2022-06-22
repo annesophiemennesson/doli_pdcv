@@ -450,7 +450,6 @@ class Entrepot extends CommonObject
 				$sql .= " AND ref = '".$this->db->escape($ref)."'";
 			}
 		}
-
 		$result = $this->db->query($sql);
 		if ($result) {
 			if ($this->db->num_rows($result) > 0) {

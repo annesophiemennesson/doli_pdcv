@@ -4882,18 +4882,18 @@ abstract class CommonObject
 		global $langs, $hookmanager, $conf, $form, $action;
 
 		print '<tr class="liste_titre">';
-		print '<td class="linecolref">'.$langs->trans('Ref').'</td>';
-		print '<td class="linecoldescription">'.$langs->trans('Description').'</td>';
-		print '<td class="linecolvat right">'.$langs->trans('VATRate').'</td>';
-		print '<td class="linecoluht right">'.$langs->trans('PriceUHT').'</td>';
+		print '<td>'.$langs->trans('Ref').'</td>';
+		print '<td>'.$langs->trans('Description').'</td>';
+		print '<td class="right">'.$langs->trans('VATRate').'</td>';
+		print '<td class="right">'.$langs->trans('PriceUHT').'</td>';
 		if (!empty($conf->multicurrency->enabled)) {
-			print '<td class="linecoluht_currency right">'.$langs->trans('PriceUHTCurrency').'</td>';
+			print '<td class="right">'.$langs->trans('PriceUHTCurrency').'</td>';
 		}
-		print '<td class="linecolqty right">'.$langs->trans('Qty').'</td>';
+		print '<td class="right">'.$langs->trans('Qty').'</td>';
 		if (!empty($conf->global->PRODUCT_USE_UNITS)) {
-			print '<td class="linecoluseunit left">'.$langs->trans('Unit').'</td>';
+			print '<td class="left">'.$langs->trans('Unit').'</td>';
 		}
-		print '<td class="linecoldiscount right">'.$langs->trans('ReductionShort').'</td>';
+		print '<td class="right">'.$langs->trans('ReductionShort').'</td>';
 		print '<td class="center">'.$form->showCheckAddButtons('checkforselect', 1).'</td>';
 		print '</tr>';
 		$i = 0;
@@ -5940,14 +5940,7 @@ abstract class CommonObject
 				$attributeLabel    = $extrafields->attributes[$this->table_element]['label'][$attributeKey];
 				$attributeParam    = $extrafields->attributes[$this->table_element]['param'][$attributeKey];
 				$attributeRequired = $extrafields->attributes[$this->table_element]['required'][$attributeKey];
-				$attributeUnique   = $extrafields->attributes[$this->table_element]['unique'][$attributeKey];
 				$attrfieldcomputed = $extrafields->attributes[$this->table_element]['computed'][$attributeKey];
-
-				// If we clone, we have to clean unique extrafields to prevent duplicates.
-				// This behaviour can be prevented by external code by changing $this->context['createfromclone'] value in createFrom hook
-				if (! empty($this->context['createfromclone']) && $this->context['createfromclone'] == 'createfromclone' && ! empty($attributeUnique)) {
-					$new_array_options[$key] = null;
-				}
 
 				// Similar code than into insertExtraFields
 				if ($attributeRequired) {
@@ -5999,7 +5992,7 @@ abstract class CommonObject
 							$this->errors[] = $langs->trans("ExtraFieldHasWrongValue", $attributeLabel);
 							return -1;
 						} elseif ($value == '') {
-							$value = null;
+							$new_array_options[$key] = null;
 						}
 						//dol_syslog("double value"." sur ".$attributeLabel."(".$value." is '".$attributeType."')", LOG_DEBUG);
 						$new_array_options[$key] = $value;
@@ -6365,7 +6358,7 @@ abstract class CommonObject
 						$this->errors[] = $langs->trans("ExtraFieldHasWrongValue", $attributeLabel);
 						return -1;
 					} elseif ($value === '') {
-						$value = null;
+						$this->array_options["options_".$key] = null;
 					}
 					//dol_syslog("double value"." sur ".$attributeLabel."(".$value." is '".$attributeType."')", LOG_DEBUG);
 					$this->array_options["options_".$key] = $value;

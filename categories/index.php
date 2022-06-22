@@ -178,6 +178,7 @@ foreach ($fulltree as $key => $val) {
 	$categstatic->ref = $val['label'];
 	$categstatic->color = $val['color'];
 	$categstatic->type = $type;
+
 	$desc = dol_htmlcleanlastbr($val['description']);
 
 	$counter = '';

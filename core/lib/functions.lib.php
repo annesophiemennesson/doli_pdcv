@@ -375,7 +375,7 @@ function GETPOSTISSET($paramname)
  *  @param  string  $paramname   Name of parameter to found
  *  @param  string  $check	     Type of check
  *                               ''=no check (deprecated)
- *                               'none'=no check (only for param that should have very rich content like passwords)
+ *                               'none'=no check (only for param that should have very rich content)
  *                               'array', 'array:restricthtml' or 'array:aZ09' to check it's an array
  *                               'int'=check it's numeric (integer or float)
  *                               'intcomma'=check it's integer+comma ('1,2,3,4...')
@@ -5351,16 +5351,11 @@ function price2num($amount, $rounding = '', $option = 0)
 	// Decimal delimiter for PHP and database SQL requests must be '.'
 	$dec = ',';
 	$thousand = ' ';
-	if (is_null($langs)) {	// $langs is not defined, we use english values.
-		$dec = '.';
-		$thousand = ',';
-	} else {
-		if ($langs->transnoentitiesnoconv("SeparatorDecimal") != "SeparatorDecimal") {
-			$dec = $langs->transnoentitiesnoconv("SeparatorDecimal");
-		}
-		if ($langs->transnoentitiesnoconv("SeparatorThousand") != "SeparatorThousand") {
-			$thousand = $langs->transnoentitiesnoconv("SeparatorThousand");
-		}
+	if ($langs->transnoentitiesnoconv("SeparatorDecimal") != "SeparatorDecimal") {
+		$dec = $langs->transnoentitiesnoconv("SeparatorDecimal");
+	}
+	if ($langs->transnoentitiesnoconv("SeparatorThousand") != "SeparatorThousand") {
+		$thousand = $langs->transnoentitiesnoconv("SeparatorThousand");
 	}
 	if ($thousand == 'None') {
 		$thousand = '';
@@ -8200,7 +8195,7 @@ function verifCond($strToEvaluate)
  * @param 	string	$s					String to evaluate
  * @param	int		$returnvalue		0=No return (used to execute eval($a=something)). 1=Value of eval is returned (used to eval($something)).
  * @param   int     $hideerrors     	1=Hide errors
- * @param	string	$onlysimplestring	0=Accept all chars, 1=Accept only simple string with char 'a-z0-9\s^$_+-.*\/>&|=!?():"\',/';, 2=Accept also ';[]'
+ * @param	string	$onlysimplestring	0=Accept all chars, 1=Accept only simple string with char 'a-z0-9\s$_->&|=';, 2=Accept also '!?():"\';,/'
  * @return	mixed						Nothing or return result of eval
  */
 function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1')
@@ -8218,7 +8213,7 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 	// Test dangerous char (used for RCE), we allow only PHP variable testing.
 	if ($onlysimplestring == '1') {
 		//print preg_quote('$_->&|', '/');
-		if (preg_match('/[^a-z0-9\s'.preg_quote('^$_+-.*/>&|=!?():"\',/', '/').']/i', $s)) {
+		if (preg_match('/[^a-z0-9\s'.preg_quote('$_+-*/>&|=!?():"', '/').']/i', $s)) {
 			if ($returnvalue) {
 				return 'Bad string syntax to evaluate (found chars that are not chars for simplestring): '.$s;
 			} else {
@@ -8228,7 +8223,7 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 		}
 	} elseif ($onlysimplestring == '2') {
 		//print preg_quote('$_->&|', '/');
-		if (preg_match('/[^a-z0-9\s'.preg_quote('^$_+-.*/>&|=!?():"\',/;[]', '/').']/i', $s)) {
+		if (preg_match('/[^a-z0-9\s'.preg_quote('^$_+-*/>&|=!?():"\';,/', '/').']/i', $s)) {
 			if ($returnvalue) {
 				return 'Bad string syntax to evaluate (found chars that are not chars for simplestring): '.$s;
 			} else {
@@ -8245,7 +8240,7 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 			return '';
 		}
 	}
-	if (preg_match('/[^0-9]+\.[^0-9]+/', $s)) {	// We refuse . if not between 2 numbers
+	if (strpos($s, '.') !== false) {
 		if ($returnvalue) {
 			return 'Bad string syntax to evaluate (dot char is forbidden): '.$s;
 		} else {
