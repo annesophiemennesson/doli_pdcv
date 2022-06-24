@@ -17,10 +17,11 @@
 -- ===================================================================
 
 
-ALTER TABLE llx_transfert_produit ADD UNIQUE INDEX uk_transfert_stock_produit (fk_transfert_stock, fk_product);
+ALTER TABLE llx_inventaire_produit ADD UNIQUE INDEX uk_inventaire_produit (fk_inventaire, fk_product);
 
-ALTER TABLE llx_transfert_produit ADD INDEX idx_transfert_fk_transfert (fk_transfert_stock);
-ALTER TABLE llx_transfert_produit ADD INDEX idx_transfert_fk_produit (fk_product);
+ALTER TABLE llx_inventaire_produit ADD INDEX idx_inventaire_produit_fk_transfert (fk_inventaire);
+ALTER TABLE llx_inventaire_produit ADD INDEX idx_inventaire_produit_fk_product (fk_product);
+ALTER TABLE llx_inventaire_produit ADD INDEX idx_inventaire_produit_fk_user (fk_user);
 
-ALTER TABLE llx_transfert_produit ADD CONSTRAINT fk_transfert_fk_transfert	FOREIGN KEY (fk_transfert_stock) REFERENCES llx_transfert_stock (rowid);
+ALTER TABLE llx_inventaire_produit ADD CONSTRAINT fk_inventaire_produit_fk_inventaire	FOREIGN KEY (fk_inventaire) REFERENCES llx_inventaire (rowid);
 

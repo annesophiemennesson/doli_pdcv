@@ -136,6 +136,10 @@ class CommandeFournisseur extends CommonOrder
 	public $total_ttc;
 	public $source;
 
+	public $total_ht_recu;
+	public $total_tva_recu;
+	public $total_ttc_recu;
+
 	/**
 	 * @var int ID
 	 */
@@ -235,6 +239,10 @@ class CommandeFournisseur extends CommonOrder
 		'last_main_doc' =>array('type'=>'varchar(255)', 'label'=>'LastMainDoc', 'enabled'=>1, 'visible'=>-1, 'position'=>245),
 		'fk_statut' =>array('type'=>'smallint(6)', 'label'=>'Status', 'enabled'=>1, 'visible'=>-1, 'position'=>500),
 		'import_key' =>array('type'=>'varchar(14)', 'label'=>'ImportId', 'enabled'=>1, 'visible'=>-2, 'position'=>900),
+		'total_tva_recu' =>array('type'=>'double(24,8)', 'label'=>'Tva', 'enabled'=>1, 'visible'=>-1, 'position'=>130, 'isameasure'=>1),
+		'total_ht_recu' =>array('type'=>'double(24,8)', 'label'=>'TotalHT', 'enabled'=>1, 'visible'=>-1, 'position'=>145, 'isameasure'=>1),
+		'total_ttc_recu' =>array('type'=>'double(24,8)', 'label'=>'TotalTTC', 'enabled'=>1, 'visible'=>-1, 'position'=>150, 'isameasure'=>1),
+		
 	);
 
 
@@ -317,8 +325,12 @@ class CommandeFournisseur extends CommonOrder
 		if (empty($id) && empty($ref)) {
 			return -1;
 		}
-
-		$sql = "SELECT c.rowid, c.entity, c.ref, ref_supplier, c.fk_soc, c.fk_statut, c.amount_ht, c.total_ht, c.total_ttc, c.total_tva,";
+		$sql = "SELECT *, ";
+		$sql .= " ROUND(SUM(total_ht_recu), 2) AS tot_ht,";
+		$sql .= " ROUND(SUM(total_tva_recu), 2) AS tot_tva,";
+		$sql .= " ROUND(SUM(total_ttc_recu), 2) AS tot_ttc";
+		$sql .= " FROM ";
+		$sql .= " (SELECT c.rowid, c.entity, c.ref, ref_supplier, c.fk_soc, c.fk_statut, c.amount_ht, c.total_ht, c.total_ttc, c.total_tva,";
 		$sql .= " c.localtax1, c.localtax2, ";
 		$sql .= " c.date_creation, c.date_valid, c.date_approve, c.date_approve2,";
 		$sql .= " c.fk_user_author, c.fk_user_valid, c.fk_user_approve, c.fk_user_approve2,";
@@ -331,11 +343,16 @@ class CommandeFournisseur extends CommonOrder
 		$sql .= " p.code as mode_reglement_code, p.libelle as mode_reglement_libelle";
 		$sql .= ', c.fk_incoterms, c.location_incoterms';
 		$sql .= ', i.libelle as label_incoterms';
+		$sql .= ', (d.total_ht / d.qty * ifnull(SUM(f.qty), 0)) AS total_ht_recu';
+		$sql .= ', (d.total_tva / d.qty * ifnull(SUM(f.qty), 0)) AS total_tva_recu';
+		$sql .= ', (d.total_ttc / d.qty * ifnull(SUM(f.qty), 0)) AS total_ttc_recu';
 		$sql .= " FROM ".MAIN_DB_PREFIX."commande_fournisseur as c";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_payment_term as cr ON c.fk_cond_reglement = cr.rowid";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_paiement as p ON c.fk_mode_reglement = p.id";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_input_method as cm ON cm.rowid = c.fk_input_method";
 		$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'c_incoterms as i ON c.fk_incoterms = i.rowid';
+		$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commande_fournisseurdet AS d ON (d.fk_commande = c.rowid)';
+		$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commande_fournisseur_dispatch AS f ON (d.fk_commande = f.fk_commande AND d.fk_product = f.fk_product)';
 
 		if (empty($id)) {
 			$sql .= " WHERE c.entity IN (".getEntity('supplier_order').")";
@@ -346,6 +363,9 @@ class CommandeFournisseur extends CommonOrder
 		if ($ref) {
 			$sql .= " AND c.ref='".$this->db->escape($ref)."'";
 		}
+		$sql .= ' GROUP BY d.fk_product';
+		$sql .= ') AS t';
+		$sql .= ' GROUP BY t.rowid';
 
 		dol_syslog(get_class($this)."::fetch", LOG_DEBUG);
 		$resql = $this->db->query($sql);
@@ -376,6 +396,9 @@ class CommandeFournisseur extends CommonOrder
 			$this->total_localtax1		= $obj->localtax1;
 			$this->total_localtax2		= $obj->localtax2;
 			$this->total_ttc			= $obj->total_ttc;
+			$this->total_ht_recu		= $obj->tot_ht;
+			$this->total_tva_recu		= $obj->tot_tva;
+			$this->total_ttc_recu		= $obj->tot_ttc;
 			$this->date_creation = $this->db->jdate($obj->date_creation);
 			$this->date_valid = $this->db->jdate($obj->date_valid);
 			$this->date_approve			= $this->db->jdate($obj->date_approve);
@@ -469,17 +492,19 @@ class CommandeFournisseur extends CommonOrder
 		$sql .= " l.localtax1_tx, l. localtax2_tx, l.localtax1_type, l. localtax2_type, l.total_localtax1, l.total_localtax2,";
 		$sql .= " l.total_ht, l.total_tva, l.total_ttc, l.special_code, l.fk_parent_line, l.rang,";
 		$sql .= " p.rowid as product_id, p.ref as product_ref, p.label as product_label, p.description as product_desc, p.tobatch as product_tobatch, p.barcode as product_barcode,";
-		$sql .= " l.fk_unit,";
+		$sql .= " l.fk_unit, ifnull(SUM(f.qty), 0) AS qte_recue ,";
 		$sql .= " l.date_start, l.date_end,";
 		$sql .= ' l.fk_multicurrency, l.multicurrency_code, l.multicurrency_subprice, l.multicurrency_total_ht, l.multicurrency_total_tva, l.multicurrency_total_ttc';
 		$sql .= " FROM ".MAIN_DB_PREFIX."commande_fournisseurdet as l";
+		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."commande_fournisseur_dispatch AS f ON (l.fk_commande = f.fk_commande AND l.fk_product = f.fk_product)";
 		$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'product as p ON l.fk_product = p.rowid';
 		$sql .= " WHERE l.fk_commande = ".((int) $this->id);
 		if ($only_product) {
 			$sql .= ' AND p.fk_product_type = 0';
 		}
+		$sql .= ' GROUP BY l.fk_product';
 		$sql .= " ORDER BY l.rang, l.rowid";
-		//print $sql;
+		//;
 
 		dol_syslog(get_class($this)."::fetch get lines", LOG_DEBUG);
 		$result = $this->db->query($sql);
@@ -512,6 +537,8 @@ class CommandeFournisseur extends CommonOrder
 				$line->total_localtax2	   = $objp->total_localtax2;
 				$line->total_ttc           = $objp->total_ttc;
 				$line->product_type        = $objp->product_type;
+
+				$line->qte_recue		   = $objp->qte_recue;
 
 				$line->fk_product          = $objp->fk_product;
 

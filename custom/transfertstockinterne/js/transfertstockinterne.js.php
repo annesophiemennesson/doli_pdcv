@@ -106,7 +106,7 @@ function search_filter(){
 			search_dest: $('#search_dest').val(),
 			search_date: $('#search_date').val(),
 			search_statut: $('#search_statut').val(),
-			token: '<?php echo currentToken(); ?>' 
+			token: '<?php echo newToken(); ?>' 
 		},
 			success: function(data) {
 			$('#toutes_demandes .oddeven').each(function(){

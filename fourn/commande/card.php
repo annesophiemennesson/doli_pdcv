@@ -2310,12 +2310,18 @@ if ($action == 'create') {
 		$alert = ' '.img_warning($langs->trans('OrderMinAmount').': '.price($object->thirdparty->supplier_order_min_amount));
 	}
 	print '<tr><td class="titlefieldmiddle">'.$langs->trans("AmountHT").'</td>';
-	print '<td>'.price($object->total_ht, '', $langs, 1, -1, -1, $conf->currency).$alert.'</td>';
-	print '</tr>';
+	print '<td>'.price($object->total_ht, '', $langs, 1, -1, -1, $conf->currency).$alert;
+	if ($object->total_ht != $object->total_ht_recu){
+		print ' ('.price($object->total_ht_recu, '', $langs, 1, -1, -1, $conf->currency).')';
+	}
+	print '</td></tr>';
 
 	// Total VAT
-	print '<tr><td>'.$langs->trans("AmountVAT").'</td><td>'.price($object->total_tva, '', $langs, 1, -1, -1, $conf->currency).'</td>';
-	print '</tr>';
+	print '<tr><td>'.$langs->trans("AmountVAT").'</td><td>'.price($object->total_tva, '', $langs, 1, -1, -1, $conf->currency);
+	if ($object->total_tva != $object->total_tva_recu){
+		print ' ('.price($object->total_tva_recu, '', $langs, 1, -1, -1, $conf->currency).')';
+	}
+	print '</td></tr>';
 
 	// Amount Local Taxes
 	if ($mysoc->localtax1_assuj == "1" || $object->total_localtax1 != 0) { //Localtax1
@@ -2330,8 +2336,11 @@ if ($action == 'create') {
 	}
 
 	// Total TTC
-	print '<tr><td>'.$langs->trans("AmountTTC").'</td><td>'.price($object->total_ttc, '', $langs, 1, -1, -1, $conf->currency).'</td>';
-	print '</tr>';
+	print '<tr><td>'.$langs->trans("AmountTTC").'</td><td>'.price($object->total_ttc, '', $langs, 1, -1, -1, $conf->currency);
+	if ($object->total_ttc != $object->total_ttc_recu){
+		print ' ('.price($object->total_ttc_recu, '', $langs, 1, -1, -1, $conf->currency).')';
+	}
+	print '</td></tr>';
 
 	print '</table>';
 
@@ -2362,7 +2371,6 @@ if ($action == 'create') {
 	 * Lines
 	 */
 	//$result = $object->getLinesArray();
-
 
 	print '	<form name="addproduct" id="addproduct" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.(($action != 'editline') ? '' : '#line_'.GETPOST('lineid', 'int')).'" method="POST">
 	<input type="hidden" name="token" value="'.newToken().'">
@@ -2566,7 +2574,7 @@ if ($action == 'create') {
 			//{
 			if (((!empty($conf->fournisseur->enabled) && empty($conf->global->MAIN_USE_NEW_SUPPLIERMOD)) || !empty($conf->supplier_invoice->enabled)) && ($object->statut >= 2 && $object->statut != 7 && $object->billed != 1)) {  // statut 2 means approved, 7 means canceled
 				if ($user->rights->fournisseur->facture->creer || $user->rights->supplier_invoice->creer) {
-					print '<a class="butAction" href="'.DOL_URL_ROOT.'/fourn/facture/card.php?action=create&amp;origin='.$object->element.'&amp;originid='.$object->id.'&amp;socid='.$object->socid.'">'.$langs->trans("CreateBill").'</a>';
+					//print '<a class="butAction" href="'.DOL_URL_ROOT.'/fourn/facture/card.php?action=create&amp;origin='.$object->element.'&amp;originid='.$object->id.'&amp;socid='.$object->socid.'">'.$langs->trans("CreateBill").'</a>';
 				}
 			}
 			//}

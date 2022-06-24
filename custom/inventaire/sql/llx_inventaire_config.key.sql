@@ -17,10 +17,6 @@
 -- ===================================================================
 
 
-ALTER TABLE llx_transfert_produit ADD UNIQUE INDEX uk_transfert_stock_produit (fk_transfert_stock, fk_product);
+ALTER TABLE llx_inventaire_config ADD INDEX idx_llx_inventaire_config_fk_entrepot (fk_entrepot);
 
-ALTER TABLE llx_transfert_produit ADD INDEX idx_transfert_fk_transfert (fk_transfert_stock);
-ALTER TABLE llx_transfert_produit ADD INDEX idx_transfert_fk_produit (fk_product);
-
-ALTER TABLE llx_transfert_produit ADD CONSTRAINT fk_transfert_fk_transfert	FOREIGN KEY (fk_transfert_stock) REFERENCES llx_transfert_stock (rowid);
 

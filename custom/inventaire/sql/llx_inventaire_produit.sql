@@ -16,11 +16,15 @@
 --
 -- ===================================================================
 
-
-ALTER TABLE llx_transfert_produit ADD UNIQUE INDEX uk_transfert_stock_produit (fk_transfert_stock, fk_product);
-
-ALTER TABLE llx_transfert_produit ADD INDEX idx_transfert_fk_transfert (fk_transfert_stock);
-ALTER TABLE llx_transfert_produit ADD INDEX idx_transfert_fk_produit (fk_product);
-
-ALTER TABLE llx_transfert_produit ADD CONSTRAINT fk_transfert_fk_transfert	FOREIGN KEY (fk_transfert_stock) REFERENCES llx_transfert_stock (rowid);
+create table llx_inventaire_produit
+(
+    rowid					integer AUTO_INCREMENT PRIMARY KEY,
+    fk_inventaire           integer NOT NULL,                       -- lien avec l'inventaire
+    fk_product              integer NOT NULL,                       -- produit
+    stock_attendu           real DEFAULT NULL,                      -- stock attendu
+    stock_reel              real DEFAULT NULL,                      -- stock reel
+    stock_confirm           real DEFAULT NULL,                      -- stock confirmé
+    fk_user                 integer DEFAULT NULL,                   -- utilisateur qui fait l'inventaire
+    commentaire             varchar(255) DEFAULT NULL,              -- commentaire
+)ENGINE=innodb;
 

@@ -133,9 +133,14 @@ print '<div class="fichecenter">';
 // Draft MyObject
 if (! empty($conf->transfertstockinterne->enabled) && $user->rights->transfertstockinterne->transfert_stock->create)
 {
+	$sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "entrepot WHERE ref = 'Dépôt'";
+	$result = $db->query($sql);
+	$obj = $db->fetch_object($result);
 	// Si l'utilisateur n'est pas lié à un magasin
 	if (empty($user->fk_warehouse)){
 		print '<p><strong>Vous n\'êtes lié à aucun magasin, vous ne pouvez donc faire aucune commande<br/>Effectuez la modification dans votre fiche utilisateur, déconnectez-vous et reconnectez-vous pour réessayer.</strong></p>';
+	}elseif ($user->fk_warehouse == $obj->rowid){
+		print '<p><strong>Vous êtes lié au dépôt, vous ne pouvez donc faire aucune demande de ramasse<br/>Effectuez la modification dans votre fiche utilisateur, déconnectez-vous et reconnectez-vous pour réessayer.</strong></p>';
 	}else{
 		// On vérifie si il y a déjà une commande pour ce magasin
 		$_sql = "SELECT rowid

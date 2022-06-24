@@ -286,6 +286,10 @@ if ((($line->info_bits & 2) != 2) && $line->special_code != 3) {
 	print '&nbsp;';
 }
 print '</td>';
+if ($this->element == 'order_supplier'){
+	$coldisplay++;
+	print '<td class="linecolqty nowrap right">'.price($line->qte_recue, 0, '', 0, 0).'</td>';
+}
 
 if (!empty($conf->global->PRODUCT_USE_UNITS)) {
 	print '<td class="linecoluseunit nowrap left">';
@@ -358,6 +362,12 @@ if ($line->special_code == 3) { ?>
 		print '<span class="classfortooltip" title="'.dol_escape_htmltag($tooltiponprice).'">';
 	}
 	print price($sign * $line->total_ht);
+	if ($this->element == 'order_supplier'){
+		$tot = $line->total_ht / $line->qty * $line->qte_recue;
+		if ($tot != $line->total_ht){
+			print " (".price($sign * $tot).")";
+		}
+	}
 	if (empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER)) {
 		print '</span>';
 	}

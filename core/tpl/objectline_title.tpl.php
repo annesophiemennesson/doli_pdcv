@@ -94,7 +94,13 @@ if ($inputalsopricewithtax) {
 }
 
 // Qty
-print '<td class="linecolqty right">'.$langs->trans('Qty').'</td>';
+if ($this->element == 'order_supplier'){
+	print '<td class="linecolqty right">Qté commandée</td>';
+	print '<td class="linecolqty right">Qté reçue</td>';
+}else{
+	print '<td class="linecolqty right">'.$langs->trans('Qty').'</td>';
+}
+
 
 // Unit
 if (!empty($conf->global->PRODUCT_USE_UNITS)) {
