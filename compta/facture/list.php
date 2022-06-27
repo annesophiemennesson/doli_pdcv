@@ -10,7 +10,7 @@
  * Copyright (C) 2013      Florian Henry         <florian.henry@open-concept.pro>
  * Copyright (C) 2013      Cédric Salvador       <csalvador@gpcsolutions.fr>
  * Copyright (C) 2015      Jean-François Ferry   <jfefe@aternatik.fr>
- * Copyright (C) 2015-2021 Ferran Marcet         <fmarcet@2byte.es>
+ * Copyright (C) 2015-2022 Ferran Marcet         <fmarcet@2byte.es>
  * Copyright (C) 2017      Josep Lluís Amador    <joseplluis@lliuretic.cat>
  * Copyright (C) 2018      Charlene Benke        <charlie@patas-monkey.com>
  * Copyright (C) 2019-2021 Alexandre Spangaro    <aspangaro@open-dsi.fr>
@@ -565,13 +565,13 @@ $sql .= ' f.retained_warranty, f.retained_warranty_date_limit, f.situation_final
 $sql .= ' s.rowid as socid, s.nom as name, s.name_alias as alias, s.email, s.phone, s.fax, s.address, s.town, s.zip, s.fk_pays, s.client, s.fournisseur, s.code_client, s.code_fournisseur, s.code_compta as code_compta_client, s.code_compta_fournisseur,';
 $sql .= ' typent.code as typent_code,';
 $sql .= ' state.code_departement as state_code, state.nom as state_name,';
-$sql .= ' country.code as country_code, ';
+$sql .= ' country.code as country_code,';
 $sql .= ' p.rowid as project_id, p.ref as project_ref, p.title as project_label,';
 $sql .= ' u.login, u.lastname, u.firstname, u.email as user_email, u.statut as user_statut, u.entity, u.photo, u.office_phone, u.office_fax, u.user_mobile, u.job, u.gender';
 // We need dynamount_payed to be able to sort on status (value is surely wrong because we can count several lines several times due to other left join or link with contacts. But what we need is just 0 or > 0)
 // TODO Better solution to be able to sort on already payed or remain to pay is to store amount_payed in a denormalized field.
-if (!$sall || $search_paymentmode > 0) {
-	$sql .= ', pai.amount as dynamount_payed, pai.fk_paiement, SUM(pf.multicurrency_amount) as multicurrency_dynamount_payed ';
+if (!$sall) {
+	$sql .= ', SUM(pf.amount) as dynamount_payed, SUM(pf.multicurrency_amount) as multicurrency_dynamount_payed';
 }
 if ($search_categ_cus && $search_categ_cus != -1) {
 	$sql .= ", cc.fk_categorie, cc.fk_soc";
@@ -598,9 +598,8 @@ $sql .= ', '.MAIN_DB_PREFIX.'facture as f';
 if (is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element."_extrafields as ef on (f.rowid = ef.fk_object)";
 }
-if (!$sall || $search_paymentmode > 0) {
+if (!$sall) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'paiement_facture as pf ON pf.fk_facture = f.rowid';
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'paiement as pai ON (pai.rowid = pf.fk_paiement)';
 }
 if ($sall || $search_product_category > 0) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facturedet as pd ON f.rowid=pd.fk_facture';
@@ -754,7 +753,7 @@ if ($search_status != '-1' && $search_status != '') {
 }
 
 if ($search_paymentmode > 0) {
-	$sql .= " AND pai.fk_paiement = ".((int) $search_paymentmode);
+	$sql .= " AND f.fk_mode_reglement = ".((int) $search_paymentmode);
 }
 if ($search_paymentterms > 0) {
 	$sql .= " AND f.fk_cond_reglement = ".((int) $search_paymentterms);
@@ -846,12 +845,28 @@ $sql .= ' f.rowid DESC ';
 
 $nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
+	/* This old and fast method to get and count full list returns all record so use a high amount of memory.
 	$result = $db->query($sql);
 	$nbtotalofrecords = $db->num_rows($result);
-	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller then paging size (filtering), goto and load page 0
+	*/
+	/* The fast and low memory method to get and count full list converts the sql into a sql count */
+	if ($sall || $search_product_category > 0 || $search_user > 0) {
+		$sqlforcount = preg_replace('/^SELECT[a-zA-Z0-9\._\s\(\),=<>\:\-\']+\sFROM/', 'SELECT COUNT(DISTINCT f.rowid) as nbtotalofrecords FROM', $sql);
+	} else {
+		$sqlforcount = preg_replace('/^SELECT[a-zA-Z0-9\._\s\(\),=<>\:\-\']+\sFROM/', 'SELECT COUNT(f.rowid) as nbtotalofrecords FROM', $sql);
+		$sqlforcount = preg_replace('/LEFT JOIN '.MAIN_DB_PREFIX.'paiement_facture as pf ON pf.fk_facture = f.rowid/', '', $sqlforcount);
+	}
+	$sqlforcount = preg_replace('/GROUP BY.*$/', '', $sqlforcount);
+
+	$resql = $db->query($sqlforcount);
+	$objforcount = $db->fetch_object($resql);
+	$nbtotalofrecords = $objforcount->nbtotalofrecords;
+
+	if (($page * $limit) > $nbtotalofrecords) {	// if total of record found is smaller than page * limit, goto and load page 0
 		$page = 0;
 		$offset = 0;
 	}
+	$db->free($resql);
 }
 
 $sql .= $db->plimit($limit + 1, $offset);
@@ -1935,11 +1950,8 @@ if ($resql) {
 
 			// Payment mode
 			if (!empty($arrayfields['f.fk_mode_reglement']['checked'])) {
-				$mp = $obj->fk_mode_reglement;
-				if ($search_paymentmode > 0) 
-					$mp = $search_paymentmode;				
 				print '<td class="tdoverflowmax100">';
-				$form->form_modes_reglement($_SERVER['PHP_SELF'], $mp, 'none', '', -1);
+				$form->form_modes_reglement($_SERVER['PHP_SELF'], $obj->fk_mode_reglement, 'none', '', -1);
 				print '</td>';
 				if (!$i) {
 					$totalarray['nbfield']++;
@@ -2064,7 +2076,7 @@ if ($resql) {
 				// Sales representatives
 				print '<td>';
 				if ($obj->socid > 0) {
-					$listsalesrepresentatives = $thirdpartystatic->getSalesRepresentatives($user);
+					$listsalesrepresentatives = $companystatic->getSalesRepresentatives($user);
 					if ($listsalesrepresentatives < 0) {
 						dol_print_error($db);
 					}
@@ -2112,7 +2124,7 @@ if ($resql) {
 			}
 
 			if (!empty($arrayfields['dynamount_payed']['checked'])) {
-				print '<td class="right nowraponall amount">'.(!empty($obj->dynamount_payed) ? price($obj->dynamount_payed, 0, $langs) : '&nbsp;').'</td>'; // TODO Use a denormalized field
+				print '<td class="right nowraponall amount">'.(!empty($totalpay) ? price($totalpay, 0, $langs) : '&nbsp;').'</td>'; // TODO Use a denormalized field
 				if (!$i) {
 					$totalarray['nbfield']++;
 				}

@@ -65,7 +65,8 @@ $hookmanager->initHooks(array('bankcard', 'globalcard'));
 
 // Security check
 $id = GETPOST("id", 'int') ? GETPOST("id", 'int') : GETPOST('ref', 'alpha');
-$fieldid = GETPOSTISSET("ref") ? 'ref' : 'rowid';
+$fieldid = GETPOST("id", 'int') ? 'rowid' : 'ref';
+
 $result = restrictedArea($user, 'banque', $id, 'bank_account&bank_account', '', '', $fieldid);
 
 
@@ -768,13 +769,14 @@ if ($action == 'create') {
 			print '</td></tr>';
 
 			if ($conf->prelevement->enabled) {
-				print '<tr><td>'.$langs->trans("ICS").' ('.$langs->trans("StandingOrder").')</td>';
+				print '<tr><td>'.$form->textwithpicto($langs->trans("ICS"), $langs->trans("ICS").' ('.$langs->trans("UsedFor", $langs->transnoentitiesnoconv("StandingOrder")).')').'</td>';
 				print '<td>'.$object->ics.'</td>';
 				print '</tr>';
 			}
 
+			// TODO ICS is not used with bank transfer !
 			if ($conf->paymentbybanktransfer->enabled) {
-				print '<tr><td>'.$langs->trans("ICS").' ('.$langs->trans("BankTransfer").')</td>';
+				print '<tr><td>'.$form->textwithpicto($langs->trans("IDS"), $langs->trans("IDS").' ('.$langs->trans("UsedFor", $langs->transnoentitiesnoconv("BankTransfer")).')').'</td>';
 				print '<td>'.$object->ics_transfer.'</td>';
 				print '</tr>';
 			}
@@ -1067,12 +1069,12 @@ if ($action == 'create') {
 			print '<td><input class="minwidth150 maxwidth200onsmartphone" maxlength="11" type="text" class="flat" name="bic" value="'.(GETPOSTISSET('bic') ? GETPOST('bic',  'alphanohtml') : $object->bic).'"></td></tr>';
 
 			if ($conf->prelevement->enabled) {
-				print '<tr><td>'.$langs->trans("ICS").' ('.$langs->trans("StandingOrder").')</td>';
+				print '<tr><td>'.$form->textwithpicto($langs->trans("ICS"), $langs->trans("ICS").' ('.$langs->trans("UsedFor", $langs->transnoentitiesnoconv("StandingOrder")).')').'</td>';
 				print '<td><input class="minwidth150 maxwidth200onsmartphone" maxlength="32" type="text" class="flat" name="ics" value="'.(GETPOSTISSET('ics') ? GETPOST('ics', 'alphanohtml') : $object->ics).'"></td></tr>';
 			}
 
 			if ($conf->paymentbybanktransfer->enabled) {
-				print '<tr><td>'.$langs->trans("ICS").' ('.$langs->trans("BankTransfer").')</td>';
+				print '<tr><td>'.$form->textwithpicto($langs->trans("IDS"), $langs->trans("IDS").' ('.$langs->trans("UsedFor", $langs->transnoentitiesnoconv("BankTransfer")).')').'</td>';
 				print '<td><input class="minwidth150 maxwidth200onsmartphone" maxlength="32" type="text" class="flat" name="ics_transfer" value="'.(GETPOSTISSET('ics_transfer') ? GETPOST('ics_transfer', 'alphanohtml') : $object->ics_transfer).'"></td></tr>';
 			}
 

@@ -155,12 +155,11 @@ if (!empty($conf->global->INVOICE_USE_RETAINED_WARRANTY)) {
 }
 
 // Security check
-$fieldid = (!empty($ref) ? 'ref' : 'rowid');
 if ($user->socid) {
 	$socid = $user->socid;
 }
 $isdraft = (($object->statut == Facture::STATUS_DRAFT) ? 1 : 0);
-$result = restrictedArea($user, 'facture', $object->id, '', '', 'fk_soc', $fieldid, $isdraft);
+$result = restrictedArea($user, 'facture', $object->id, '', '', 'fk_soc', 'rowid', $isdraft);
 
 
 /*
@@ -605,40 +604,6 @@ if (empty($reshook)) {
 
 		$object->fetch($id);
 		$object->fetch_thirdparty();
-
-		// Check parameters
-
-		// Check for mandatory fields in thirdparty (defined into setup)
-		$array_to_check = array('IDPROF1', 'IDPROF2', 'IDPROF3', 'IDPROF4', 'IDPROF5', 'IDPROF6', 'EMAIL');
-		foreach ($array_to_check as $key) {
-			$keymin = strtolower($key);
-			$i = (int) preg_replace('/[^0-9]/', '', $key);
-			$vallabel = $object->thirdparty->$keymin;
-
-			if ($i > 0) {
-				if ($object->thirdparty->isACompany()) {
-					// Check for mandatory prof id (but only if country is other than ours)
-					if ($mysoc->country_id > 0 && $object->thirdparty->country_id == $mysoc->country_id) {
-						$idprof_mandatory = 'SOCIETE_'.$key.'_INVOICE_MANDATORY';
-						if (!$vallabel && !empty($conf->global->$idprof_mandatory)) {
-							$langs->load("errors");
-							$error++;
-							setEventMessages($langs->trans('ErrorProdIdIsMandatory', $langs->transcountry('ProfId'.$i, $object->thirdparty->country_code)).' ('.$langs->trans("ForbiddenBySetupRules").')', null, 'errors');
-						}
-					}
-				}
-			} else {
-				//var_dump($conf->global->SOCIETE_EMAIL_MANDATORY);
-				if ($key == 'EMAIL') {
-					// Check for mandatory
-					if (!empty($conf->global->SOCIETE_EMAIL_INVOICE_MANDATORY) && !isValidEMail($object->thirdparty->email)) {
-						$langs->load("errors");
-						$error++;
-						setEventMessages($langs->trans("ErrorBadEMail", $object->thirdparty->email).' ('.$langs->trans("ForbiddenBySetupRules").')', null, 'errors');
-					}
-				}
-			}
-		}
 
 		// Check for mandatory fields in invoice
 		$array_to_check = array('REF_CLIENT'=>'RefCustomer');
