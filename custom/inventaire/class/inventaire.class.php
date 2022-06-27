@@ -179,25 +179,14 @@ class Inventaire extends CommonObject
 
 		$this->db->begin();
 
-		/*$sql = "SELECT ref FROM " . MAIN_DB_PREFIX . "entrepot WHERE rowid = ".$this->fk_entrepot_arrivee;
-		$result = $this->db->query($sql);
-		$obj = $this->db->fetch_object($result);
-
+		
 		// Insert request
-		$sql = "INSERT INTO " . MAIN_DB_PREFIX . "transfert_stock(";
-		$sql .= "label";
-		$sql .= ", fk_entrepot_depart";
-		$sql .= ", fk_entrepot_arrivee";
-		$sql .= ", fk_user_demande";
+		$sql = "INSERT INTO " . MAIN_DB_PREFIX . "inventaire(";
+		$sql .= "fk_entrepot";
 		$sql .= ", date_creation";
-		$sql .= ", model_pdf";
 		$sql .= ") VALUES (";
-		$sql .= "'".$this->label."'";
-		$sql .= ", ".((int) $this->fk_entrepot_depart);
-		$sql .= ", ".((int) $this->fk_entrepot_arrivee);
-		$sql .= ", ".((int) $user->id);
+		$sql .= ((int) $this->fk_entrepot);
 		$sql .= ", '".$this->db->idate($now)."'";
-		$sql .= ", ".(!empty($this->model_pdf) ? "'".$this->db->escape($this->model_pdf)."'" : "null");
 		$sql .= ")";
 
 		dol_syslog(get_class($this)."::create", LOG_DEBUG);
@@ -208,9 +197,9 @@ class Inventaire extends CommonObject
 		}
 
 		if (!$error) {
-			$this->id = $this->db->last_insert_id(MAIN_DB_PREFIX . "transfert_stock");
+			$this->id = $this->db->last_insert_id(MAIN_DB_PREFIX . "inventaire");
 		}
-*/
+
 		// Commit or rollback
 		if ($error) {
 			foreach ($this->errors as $errmsg) {
@@ -235,40 +224,25 @@ class Inventaire extends CommonObject
 	{
 		global $conf;
 
-		/*$sql = "SELECT rowid, label, temperature_depart, temperature_arrivee, fk_entrepot_depart, ";
-		$sql .= "fk_entrepot_arrivee, fk_user_demande, fk_user_valide, fk_user_prepa, fk_user_reception, ";
-		$sql .= "date_creation, date_valide, date_prepa, date_reception, model_pdf, last_main_doc";
-		$sql .= " FROM ".MAIN_DB_PREFIX."transfert_stock";
+		$sql = "SELECT rowid, fk_entrepot, date_creation";
+		$sql .= " FROM ".MAIN_DB_PREFIX."inventaire";
 		$sql .= " WHERE rowid = ".((int) $id);
 
-		dol_syslog("Transfert_stock::fetch", LOG_DEBUG);
+		dol_syslog("Inventaire::fetch", LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql) {
 			$obj = $this->db->fetch_object($resql);
 
 			$this->id = $obj->rowid;
-			$this->label = $obj->label;
-			$this->temperature_depart = $obj->temperature_depart;
-			$this->temperature_arrivee = $obj->temperature_arrivee;
-			$this->fk_entrepot_depart = $obj->fk_entrepot_depart;
-			$this->fk_entrepot_arrivee = $obj->fk_entrepot_arrivee;
-			$this->fk_user_demande = $obj->fk_user_demande;
-			$this->fk_user_valide = $obj->fk_user_valide;
-			$this->fk_user_prepa = $obj->fk_user_prepa;
-			$this->fk_user_reception = $obj->fk_user_reception;
+			$this->fk_entrepot = $obj->fk_entrepot;
 			$this->date_creation = $obj->date_creation;
-			$this->date_valide = $obj->date_valide;
-			$this->date_prepa = $obj->date_prepa;
-			$this->date_reception = $obj->date_reception;
-			$this->model_pdf = $obj->model_pdf;
-			$this->last_main_doc = $obj->last_main_doc;
 
 			$this->db->free($resql);
 			return $this->id;
 		} else {
 			dol_print_error($this->db);
 			return -1;
-		}*/
+		}
 	}
 
 	/**

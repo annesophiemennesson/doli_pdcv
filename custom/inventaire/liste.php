@@ -1,8 +1,5 @@
 <?php
-/* Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
- * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@inodbox.com>
- * Copyright (C) 2015      Jean-François Ferry	<jfefe@aternatik.fr>
+/* Copyright (C) 2022	Anne-Sophie Mennesson	<annesophie.mennesson@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,12 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
-/**
- *	\file       inventaire/inventaireindex.php
- *	\ingroup    inventaire
- *	\brief      Home page of inventaire top menu
  */
 
 // Load Dolibarr environment
@@ -64,16 +55,16 @@ $action = GETPOST('action', 'aZ09');
 
 
 // Security check
-// if (! $user->rights->inventaire->myobject->read) {
-// 	accessforbidden();
-// }
+/*if (! $user->rights->inventaire->transfert_stock->create) {
+	accessforbidden();
+}*/
+
 $socid = GETPOST('socid', 'int');
 if (isset($user->socid) && $user->socid > 0) {
 	$action = '';
 	$socid = $user->socid;
 }
 
-$max = 5;
 $now = dol_now();
 
 
@@ -81,27 +72,67 @@ $now = dol_now();
  * Actions
  */
 
-// None
-
-
 /*
  * View
  */
 
-llxHeader("", "Inventaire");
+llxHeader("", "Liste des inventaires");
 
-print load_fiche_titre("Inventaire", '', '');
+print load_fiche_titre("Liste des inventaires", '', '');
 
 print '<div class="fichecenter">';
 
-print '<a href="'.dol_buildpath('/custom/inventaire/configuration.php', 1).'">Configuration</a><br/>';
-print '<a href="'.dol_buildpath('/custom/inventaire/liste.php', 1).'">Liste des inventaires</a><br/>';
-print '<a href="'.dol_buildpath('/custom/inventaire/new.php', 1).'">Nouveau</a><br/>';
-print '<a href="'.dol_buildpath('/custom/inventaire/controle.php', 1).'">Faire l\'inventaire</a><br/>';
-print '<a href="'.dol_buildpath('/custom/inventaire/ecart.php', 1).'">Ecarts de stock</a><br/>';
-print '</div>';
+// BEGIN MODULEBUILDER DRAFT MYOBJECT
+// Draft MyObject
+if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->create*/)
+{
+    $sql = "SELECT i.rowid, e.ref, date_creation, COUNT(fk_product) AS nb_prod, SUM(IF (stock_confirm IS NOT NULL, 1, 0)) AS nb_prod_fait
+            FROM ".MAIN_DB_PREFIX."inventaire AS i
+            LEFT JOIN ".MAIN_DB_PREFIX."entrepot AS e ON (i.fk_entrepot = e.rowid)
+            LEFT JOIN ".MAIN_DB_PREFIX."inventaire_produit AS p ON (i.rowid = p.fk_inventaire)
+            GROUP BY i.rowid
+            ORDER BY date_creation DESC;";
 
+    $result = $db->query($sql);
+    if ($result){
+        $num = $db->num_rows($result);
+        print '<table class="noborder centpercent">';
+        print '<tr class="liste_titre">';
+        print '<th>Entrepôt</th><th>Date</th><th>Nb produits à faire</th><th>Nb produits faits</th></tr>';
+        if ($num > 0)
+        {
+            $i = 0;
+            while ($i < $num)
+            {
+                $obj = $db->fetch_object($result);
+                print '<tr class="'.($i%2 == 0 ? 'pair' : 'impair').'">';
+                print '<td><a href="'.dol_buildpath('/custom/inventaire/detail.php?id='.$obj->rowid, 1).'" target="_blank"><strong>'.$obj->ref.'</strong></a></td>';
+                print '<td>'.dol_print_date($obj->date_creation, "%d/%m/%Y").'</td>';
+                print '<td>'.$obj->nb_prod.'</td>';
+                print '<td>'.$obj->nb_prod_fait.'</td>';
+                print '</tr>';
+                $i++;
+            }
+        }
+        else
+        {
+            print '<tr class="oddeven"><td colspan="4" class="center">Aucun inventaire</td></tr>';
+        }
+        print "</form></table><br>";
+
+        $db->free($resql);
+    }
+    else
+    {
+        dol_print_error($db);
+    }
+}
+//END MODULEBUILDER DRAFT MYOBJECT */
+
+
+print '</div>';
 
 // End of page
 llxFooter();
 $db->close();
+

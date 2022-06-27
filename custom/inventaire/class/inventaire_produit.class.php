@@ -30,7 +30,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
 /**
  * Class for Inventaire
  */
-class Inventaire extends CommonObject
+class Inventaire_produit extends CommonObject
 {
 	/**
 	 * @var string ID of module.
@@ -40,12 +40,12 @@ class Inventaire extends CommonObject
 	/**
 	 * @var string ID to identify managed object.
 	 */
-	public $element = 'inventaire';
+	public $element = 'inventaire_produit';
 
 	/**
 	 * @var string Name of table without prefix where object is stored. This is also the key used for extrafields management.
 	 */
-	public $table_element = 'inventaire';
+	public $table_element = 'inventaire_produit';
 
 	/**
 	 * @var int  Does this object support multicompany module ?
@@ -61,7 +61,7 @@ class Inventaire extends CommonObject
 	/**
 	 * @var string String with name of icon for inventaire. Must be the part after the 'object_' into object_inventaire.png
 	 */
-	public $picto = 'inventaire@inventaire';
+	public $picto = 'inventaire_produit@inventaire';
 
 
 	const STATUS_DRAFT = 0;
@@ -103,12 +103,24 @@ class Inventaire extends CommonObject
 	 */
 	public $fields=array(
 		'rowid' => array('type'=>'integer', 'label'=>'TechnicalID', 'enabled'=>'1', 'position'=>10, 'notnull'=>1, 'visible'=>0,),
-		'fk_entrepot' => array('type'=>'integer', 'label'=>'Fkentrepot', 'enabled'=>'1', 'position'=>30, 'notnull'=>1, 'visible'=>-1,),
-		'date_creation' => array('type'=>'datetime', 'label'=>'Datecreation', 'enabled'=>'1', 'position'=>60, 'notnull'=>1, 'visible'=>-1,),
+		'fk_inventaire' => array('type'=>'integer', 'label'=>'Fkentrepot', 'enabled'=>'1', 'position'=>30, 'notnull'=>1, 'visible'=>-1,),
+		'fk_product' => array('type'=>'integer:Product:product/class/product.class.php:1', 'label'=>'Fkproduct', 'enabled'=>'1', 'position'=>30, 'notnull'=>1, 'visible'=>-1,),
+		'stock_attendu' => array('type'=>'double', 'label'=>'Stockattendu', 'enabled'=>'1', 'position'=>30, 'notnull'=>0, 'visible'=>-1,),
+		'stock_reel' => array('type'=>'double', 'label'=>'Stockreel', 'enabled'=>'1', 'position'=>30, 'notnull'=>0, 'visible'=>-1,),
+		'stock_confirm' => array('type'=>'double', 'label'=>'Stockconfirm', 'enabled'=>'1', 'position'=>30, 'notnull'=>0, 'visible'=>-1,),
+		'fk_user' => array('type'=>'integer:User:user/class/user.class.php', 'label'=>'Fkuser', 'enabled'=>'1', 'position'=>30, 'notnull'=>0, 'visible'=>-1,),
+		'commentaire' => array('type'=>'varchar(255)', 'label'=>'Commentaire', 'enabled'=>'1', 'position'=>30, 'notnull'=>0, 'visible'=>-1,),
+		'date_inventaire' => array('type'=>'datetime', 'label'=>'Dateinventaire', 'enabled'=>'1', 'position'=>60, 'notnull'=>0, 'visible'=>-1,),
 	);
 	public $rowid;
-	public $fk_entrepot;
-	public $date_creation;
+	public $fk_inventaire;
+	public $fk_product;
+	public $stock_attendu;
+	public $stock_reel;
+	public $stock_confirm;
+	public $fk_user;
+	public $commentaire;
+	public $date_inventaire;
 	// END MODULEBUILDER PROPERTIES
 
 
@@ -168,36 +180,20 @@ class Inventaire extends CommonObject
 	{
 		global $conf;
 
-		dol_syslog("Inventaire::create");
-
-		if (empty($this->model_pdf)) {
-			$this->model_pdf = $conf->global->TRANSFERT_STOCK_ADDON_PDF;
-		}
+		dol_syslog("Inventaire_produit::create");
 
 		$error = 0;
 		$now = dol_now();
 
 		$this->db->begin();
 
-		/*$sql = "SELECT ref FROM " . MAIN_DB_PREFIX . "entrepot WHERE rowid = ".$this->fk_entrepot_arrivee;
-		$result = $this->db->query($sql);
-		$obj = $this->db->fetch_object($result);
-
 		// Insert request
-		$sql = "INSERT INTO " . MAIN_DB_PREFIX . "transfert_stock(";
-		$sql .= "label";
-		$sql .= ", fk_entrepot_depart";
-		$sql .= ", fk_entrepot_arrivee";
-		$sql .= ", fk_user_demande";
-		$sql .= ", date_creation";
-		$sql .= ", model_pdf";
+		$sql = "INSERT INTO " . MAIN_DB_PREFIX . "inventaire_produit(";
+		$sql .= "fk_inventaire";
+		$sql .= ", fk_product";
 		$sql .= ") VALUES (";
-		$sql .= "'".$this->label."'";
-		$sql .= ", ".((int) $this->fk_entrepot_depart);
-		$sql .= ", ".((int) $this->fk_entrepot_arrivee);
-		$sql .= ", ".((int) $user->id);
-		$sql .= ", '".$this->db->idate($now)."'";
-		$sql .= ", ".(!empty($this->model_pdf) ? "'".$this->db->escape($this->model_pdf)."'" : "null");
+		$sql .= ((int) $this->fk_inventaire);
+		$sql .= ", ".((int) $this->fk_product);
 		$sql .= ")";
 
 		dol_syslog(get_class($this)."::create", LOG_DEBUG);
@@ -208,9 +204,9 @@ class Inventaire extends CommonObject
 		}
 
 		if (!$error) {
-			$this->id = $this->db->last_insert_id(MAIN_DB_PREFIX . "transfert_stock");
+			$this->id = $this->db->last_insert_id(MAIN_DB_PREFIX . "inventaire_produit");
 		}
-*/
+
 		// Commit or rollback
 		if ($error) {
 			foreach ($this->errors as $errmsg) {
@@ -235,40 +231,32 @@ class Inventaire extends CommonObject
 	{
 		global $conf;
 
-		/*$sql = "SELECT rowid, label, temperature_depart, temperature_arrivee, fk_entrepot_depart, ";
-		$sql .= "fk_entrepot_arrivee, fk_user_demande, fk_user_valide, fk_user_prepa, fk_user_reception, ";
-		$sql .= "date_creation, date_valide, date_prepa, date_reception, model_pdf, last_main_doc";
-		$sql .= " FROM ".MAIN_DB_PREFIX."transfert_stock";
+		$sql = "SELECT rowid, fk_inventaire, fk_product, stock_attendu, stock_reel, ";
+		$sql .= "stock_confirm, fk_user, commentaire, date_inventaire ";
+		$sql .= " FROM ".MAIN_DB_PREFIX."inventaire_produit";
 		$sql .= " WHERE rowid = ".((int) $id);
 
-		dol_syslog("Transfert_stock::fetch", LOG_DEBUG);
+		dol_syslog("Inventaire_produit::fetch", LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql) {
 			$obj = $this->db->fetch_object($resql);
 
 			$this->id = $obj->rowid;
-			$this->label = $obj->label;
-			$this->temperature_depart = $obj->temperature_depart;
-			$this->temperature_arrivee = $obj->temperature_arrivee;
-			$this->fk_entrepot_depart = $obj->fk_entrepot_depart;
-			$this->fk_entrepot_arrivee = $obj->fk_entrepot_arrivee;
-			$this->fk_user_demande = $obj->fk_user_demande;
-			$this->fk_user_valide = $obj->fk_user_valide;
-			$this->fk_user_prepa = $obj->fk_user_prepa;
-			$this->fk_user_reception = $obj->fk_user_reception;
-			$this->date_creation = $obj->date_creation;
-			$this->date_valide = $obj->date_valide;
-			$this->date_prepa = $obj->date_prepa;
-			$this->date_reception = $obj->date_reception;
-			$this->model_pdf = $obj->model_pdf;
-			$this->last_main_doc = $obj->last_main_doc;
+			$this->fk_inventaire = $obj->fk_inventaire;
+			$this->fk_product = $obj->fk_product;
+			$this->stock_attendu = $obj->stock_attendu;
+			$this->stock_reel = $obj->stock_reel;
+			$this->stock_confirm = $obj->stock_confirm;
+			$this->fk_user = $obj->fk_user;
+			$this->commentaire = $obj->commentaire;
+			$this->date_inventaire = $obj->date_inventaire;
 
 			$this->db->free($resql);
 			return $this->id;
 		} else {
 			dol_print_error($this->db);
 			return -1;
-		}*/
+		}
 	}
 
 	/**
@@ -285,21 +273,17 @@ class Inventaire extends CommonObject
 		$error = 0;
 
 		// Update request
-		/*$sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET";
+		$sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET";
 
-		$sql .= " temperature_depart=".(isset($this->temperature_depart) ? $this->temperature_depart : "null").",";
-		$sql .= " temperature_arrivee=".(isset($this->temperature_arrivee) ? $this->temperature_arrivee : "null").",";
-		$sql .= " fk_user_valide=".(isset($this->fk_user_valide) ? $this->fk_user_valide : "null").",";
-		$sql .= " fk_user_prepa=".(isset($this->fk_user_prepa) ? $this->fk_user_prepa : "null").",";
-		$sql .= " fk_user_reception=".(isset($this->fk_user_reception) ? $this->fk_user_reception : "null").",";
-		$sql .= " date_valide=".(strval($this->date_valide) != '' ? "'".$this->date_valide."'" : 'null').",";
-		$sql .= " date_prepa=".(strval($this->date_prepa) != '' ? "'".$this->date_prepa."'" : 'null').",";
-		$sql .= " date_reception=".(strval($this->date_reception) != '' ? "'".$this->date_reception."'" : 'null').",";
-		$sql .= " model_pdf=".(strval($this->model_pdf) != '' ? "'".$this->model_pdf."'" : 'null').",";
-		$sql .= " last_main_doc=".(strval($this->last_main_doc) != '' ? "'".$this->last_main_doc."'" : 'null');
+		$sql .= " stock_attendu=".(isset($this->stock_attendu) ? $this->stock_attendu : "null").",";
+		$sql .= " stock_reel=".(isset($this->stock_reel) ? $this->stock_reel : "null").",";
+		$sql .= " stock_confirm=".(isset($this->stock_confirm) ? $this->stock_confirm : "null").",";
+		$sql .= " fk_user=".(isset($this->fk_user) ? $this->fk_user : "null").",";
+		$sql .= " commentaire=".(isset($this->commentaire) ? "'".$this->db->escape($this->commentaire)."'" : "null").",";
+		$sql .= " date_inventaire=".(strval($this->date_inventaire) != '' ? "'".$this->date_inventaire."'" : 'null');
 
 		$sql .= " WHERE rowid=".((int) $this->id);
-	
+
 		$this->db->begin();
 
 		dol_syslog(get_class($this)."::update", LOG_DEBUG);
@@ -327,7 +311,7 @@ class Inventaire extends CommonObject
 		} else {
 			$this->db->commit();
 			return 1;
-		}*/
+		}
 	}
 
 	/**

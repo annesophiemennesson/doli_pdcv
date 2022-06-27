@@ -119,7 +119,7 @@ class Transfert_stock extends CommonObject
 		'main_pdf' =>array('type'=>'varchar(255)', 'label'=>'ModelPdf', 'enabled'=>1, 'visible'=>-1, 'position'=>15),
 		'last_main_doc' =>array('type'=>'varchar(255)', 'label'=>'LastMainDoc', 'enabled'=>1, 'visible'=>-1, 'position'=>15)
 	); 
-	public $rowid;
+	public $id;
 	public $label;
 	public $temperature_depart;
 	public $temperature_arrivee;

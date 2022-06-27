@@ -114,7 +114,7 @@ class Transfert_produit extends CommonObject
 		'commentaire_prepa' =>array('type'=>'varchar(255)', 'label'=>'Commentaireprepa', 'enabled'=>1, 'visible'=>-1, 'position'=>55),
 		'commentaire_reception' =>array('type'=>'varchar(255)', 'label'=>'Commentairereception', 'enabled'=>1, 'visible'=>-1, 'position'=>60),
 		); 
-	public $rowid;
+	public $id;
 	public $fk_transfert_stock;
 	public $fk_product;
 	public $qte_demande;
