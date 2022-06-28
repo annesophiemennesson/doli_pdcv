@@ -72,4 +72,77 @@ if ($action == 'valider') {
     $inventaire->fk_user = $user->id;
     $inventaire->update($user);
 
+}elseif ($action == "search_filters"){
+	$search_entrepot = GETPOST('search_entrepot', '');
+	$search_ref = GETPOST('search_ref', '');
+	$search_delta = GETPOST('search_delta', '');
+	$search_date = GETPOST('search_date', '');
+	$id = GETPOST('id', '');
+
+
+
+	$sql = 'SELECT e.ref, p.label, stock_attendu, stock_confirm, commentaire, date_inventaire, CONCAT(lastname, " ", firstname) AS user, CONCAT((if (stock_confirm > stock_attendu , "+" , "")), stock_confirm-stock_attendu) as delta
+            FROM '.MAIN_DB_PREFIX.'inventaire_produit AS ip
+            INNER JOIN '.MAIN_DB_PREFIX.'inventaire AS i ON (i.rowid = ip.fk_inventaire)
+            INNER JOIN '.MAIN_DB_PREFIX.'entrepot AS e ON (e.rowid = i.fk_entrepot)
+            INNER JOIN '.MAIN_DB_PREFIX.'product AS p ON (p.rowid = ip.fk_product)
+            INNER JOIN '.MAIN_DB_PREFIX.'user AS u ON (u.rowid = ip.fk_user)
+            WHERE ';
+    
+	if (!empty($id))
+        $sql .= " ip.fk_product = ".$id;
+    else        
+        $sql .= " stock_attendu != stock_confirm";
+
+    if (!empty($search_entrepot))
+        $sql .= " AND i.fk_entrepot = ".$search_entrepot;
+    if (!empty($search_date))
+        $sql .= " AND DATE_FORMAT(date_inventaire, '%d/%m/%Y') = '".$search_date."'";
+    if (!empty($search_ref))
+        $sql .= " AND p.ref LIKE '%".$search_ref."%'";
+
+    switch ($search_delta){
+        case "sup":
+            $sql .= " AND stock_confirm > stock_attendu";
+            break;
+        case "inf":
+            $sql .= " AND stock_confirm < stock_attendu";
+            break;
+        case "egal":
+            $sql .= " AND stock_confirm = stock_attendu";
+            break;
+    }
+            
+    $sql .= " ORDER BY date_inventaire desc;";
+
+	$res = $db->query($sql);
+	$ret = "";
+	if ($res)
+	{
+		$num = $db->num_rows($res);	
+		$i = 0;
+        if ($num == 0){
+            $ret = '<tr class="oddeven"><td colspan="'.(empty($id) ? "8" : "7").'" class="center">Aucun résultat avec ces filtres</td></tr>';
+        }else{
+            while ($i < $num)
+            {
+                $obj = $db->fetch_object($res);
+                $ret .= '<tr class="oddeven">';
+                $ret .= '<td>'.$obj->ref.'</td>';
+                if (empty($id))
+                    $ret .= '<td>'.$obj->label.'</td>';
+                $ret .= '<td>'.$obj->stock_attendu.'</td>';
+                $ret .= '<td>'.$obj->stock_confirm.'</td>';
+                $ret .= '<td>'.$obj->delta.'</td>';
+                $ret .= '<td>'.$obj->user.'</td>';
+                $ret .= '<td>'.dol_print_date($obj->date_inventaire, "%d/%m/%Y %H:%M:%S").'</td>';
+                $ret .= '<td>'.$obj->commentaire.'</td>';
+                $ret .= '</tr>';
+                $i++;
+            }
+        }
+	}else{
+		$ret = '<tr class="oddeven"><td colspan="'.(empty($id) ? "8" : "7").'" class="center">Aucun résultat avec ces filtres</td></tr>';
+	}
+	echo $ret;
 }

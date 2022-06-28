@@ -103,7 +103,7 @@ if ($id > 0 || !empty($ref)) {
 		dol_banner_tab($object, 'ref', $linkback, ($user->socid ? 0 : 1), 'ref');
 
 
-		print '<div class="fichecenter">';
+		/*print '<div class="fichecenter">';
 
 		print '<div class="underbanner clearboth"></div>';
 		print '<table class="border tableforfield centpercent">';
@@ -211,7 +211,7 @@ if ($id > 0 || !empty($ref)) {
 				$cumul_qty = 0;
 
 				if ($num > 0) {
-					while ($i < $num /*&& $i < $conf->liste_limit*/) {
+					while ($i < $num /*&& $i < $conf->liste_limit*//*) {
 						$objp = $db->fetch_object($result);
 
 						$marginRate = ($objp->buying_price != 0) ? (100 * $objp->marge / $objp->buying_price) : '';
@@ -276,7 +276,7 @@ if ($id > 0 || !empty($ref)) {
 				dol_print_error($db);
 			}
 			$db->free($result);
-		}
+		}*/
 	}
 } else {
 	dol_print_error();

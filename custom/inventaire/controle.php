@@ -161,68 +161,7 @@ if ( !empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockintern
 //END MODULEBUILDER DRAFT MYOBJECT */
 
 
-print '</div>';?>
-
-<script>
-    function valider(_pos){
-        let _stock = parseFloat($('#stock_'+_pos).val());
-        if (isNaN(_stock) || _stock < 0){
-            alert(" ERREUR : Stock incorrect ");
-        }else{
-            $.ajax({
-                type: "POST", 
-                url: "ajax/ajax.php?action=valider&token=<?php echo newToken(); ?>",
-                data: $('#inv_'+_pos).serialize()
-            })
-            .done(function (data) {
-                if (data == "ok"){
-                    validOK(_pos);
-                }else{
-                    $('#panel_'+_pos+' .message').removeClass('hidden');
-                    $('#panel_'+_pos+' .confirm').removeClass('hidden');
-                    $('#panel_'+_pos+' .commentaire').removeClass('hidden');
-                    $('#stock_'+_pos).attr('readonly', true);
-                    $('#panel_'+_pos+' .button').attr('onclick', 'confirmer('+_pos+')');
-                }
-            });
-        }
-    }
-
-    function confirmer(_pos){
-        let _confirm = parseFloat($('#confirm_'+_pos).val());
-        let _comm = $('#commentaire_'+_pos).val();
-        if (isNaN(_confirm) || _confirm < 0){
-            alert(" ERREUR : Stock confirmé incorrect ");
-        }else if (_comm.length == 0){
-            alert(" ERREUR : Commentaire obligatoire ");
-        }else{
-            $.ajax({
-                type: "POST", 
-                url: "ajax/ajax.php?action=confirmer&token=<?php echo newToken(); ?>",
-                data: $('#inv_'+_pos).serialize()
-            })
-            .done(function (data) {
-                validOK(_pos);
-            });
-        }
-    }
-
-    function validOK(_pos){
-        let _nb = parseInt($('#nb_'+_pos).val());
-        _pos = parseInt(_pos);
-        if (_pos == _nb){
-            // Terminé
-            location.reload();
-        }else{
-            // On passe au suivant
-            $('#panel_'+_pos).remove();
-            let _next = parseInt(_pos+1);
-            $('#panel_'+_next).removeClass('hidden');
-        }
-    }
-
-</script>
-<?php
+print '</div>';
 
 // End of page
 llxFooter();

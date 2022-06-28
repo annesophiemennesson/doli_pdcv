@@ -50,6 +50,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/inventaire/class/inventaire.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/inventaire/class/inventaire_produit.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/inventaire/class/inventaire_config.class.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/inventaire/lib/inventaire.lib.php';
 
 // Load translation files required by the page
 $langs->loadLangs(array("inventaire@inventaire"));
@@ -77,88 +78,7 @@ $now = dol_now();
 
 if ($action == 'gen'){
     $entrepot = GETPOST('id', 'int');
-    $object = new Inventaire($db);
-    $object->fk_entrepot = $entrepot;
-    $object->create($user);
-    $id = $object->id;
-
-    // Recup nb jour dans la config
-    $obj = new Inventaire_config($db);
-    $obj->fetch("", $entrepot);
-    $nb_j = $obj->nb_jours;
-	
-    // Nb de produit en stock à l'entrepot
-    $sql = "SELECT COUNT(*) AS nb
-            FROM ".MAIN_DB_PREFIX."product_stock AS s
-            INNER JOIN ".MAIN_DB_PREFIX."product AS p ON (p.rowid = s.fk_product)
-            WHERE fk_entrepot = ".$entrepot;
-    $result = $db->query($sql);
-    $objnb = $db->fetch_object($result);
-    $nb_p = $objnb->nb;
-
-    //Nb produit à attribuer par jour
-    $nb_add = ceil($nb_p / $nb_j);
-
-    // On récupère les produits à ajouter qui n'ont pas été inventoriés depuis le nb de jours
-    // et qui ne sont pas déjà dans la liste à faire
-    $sql = "SELECT s.fk_product
-            FROM ".MAIN_DB_PREFIX."product_stock AS s
-            WHERE fk_entrepot = ".$entrepot." AND s.fk_product NOT IN (
-                SELECT fk_product
-                FROM ".MAIN_DB_PREFIX."inventaire_produit as p
-                INNER JOIN ".MAIN_DB_PREFIX."inventaire as i ON (i.rowid = p.fk_inventaire)
-                WHERE fk_entrepot = ".$entrepot." AND CAST(date_inventaire AS date) >= '".date('Y-m-d',strtotime('- '.$nb_j.' day'))."'  OR date_inventaire IS NULL
-            )
-            ORDER BY RAND()
-            LIMIT ".$nb_add;
-
-    $result = $db->query($sql);
-    if ($result){
-        $num = $db->num_rows($result);
-        if ($num > 0)
-        {
-            $i = 0;
-            while ($i < $num)
-            {
-                $obj = $db->fetch_object($result);
-                $objp = new Inventaire_produit($db);
-                $objp->fk_inventaire = $id;
-                $objp->fk_product = $obj->fk_product;
-                $objp->create($user);
-                $i++;
-            }
-        }
-        // Si il n'y en a pas assez alors on ajoute au hasard des produits 
-        // qui ne font pas déjà partis de la liste à inventorier
-        if ($num < $nb_add){
-            $delta = $nb_add - $num;
-            $sql = "SELECT s.fk_product
-                    FROM ".MAIN_DB_PREFIX."product_stock AS s
-                    WHERE fk_entrepot = ".$entrepot." AND s.fk_product NOT IN (
-                        SELECT fk_product
-                        FROM ".MAIN_DB_PREFIX."inventaire_produit as p
-                        INNER JOIN ".MAIN_DB_PREFIX."inventaire as i ON (i.rowid = p.fk_inventaire)
-                        WHERE fk_entrepot = ".$entrepot." AND date_inventaire IS NULL
-                    )
-                    ORDER BY RAND()
-                    LIMIT ".$delta;
-            $result = $db->query($sql);
-            $num = $db->num_rows($result);
-            if ($num > 0)
-            {
-                $i = 0;
-                while ($i < $num)
-                {
-                    $obj = $db->fetch_object($result);
-                    $objp = new Inventaire_produit($db);
-                    $objp->fk_inventaire = $id;
-                    $objp->fk_product = $obj->fk_product;
-                    $objp->create($user);
-                    $i++;
-                }
-            }
-        }
-    }
+    ajoutProduitInventaire($entrepot);
 }
 
 

@@ -24,8 +24,7 @@
 
 // Put here all includes required by your class file
 require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
-//require_once DOL_DOCUMENT_ROOT . '/societe/class/societe.class.php';
-//require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/inventaire/lib/inventaire.lib.php';
 
 /**
  * Class for Inventaire
@@ -257,51 +256,6 @@ class Inventaire extends CommonObject
 		global $conf;
 
 		$error = 0;
-
-		// Update request
-		/*$sql = "UPDATE ".MAIN_DB_PREFIX.$this->table_element." SET";
-
-		$sql .= " temperature_depart=".(isset($this->temperature_depart) ? $this->temperature_depart : "null").",";
-		$sql .= " temperature_arrivee=".(isset($this->temperature_arrivee) ? $this->temperature_arrivee : "null").",";
-		$sql .= " fk_user_valide=".(isset($this->fk_user_valide) ? $this->fk_user_valide : "null").",";
-		$sql .= " fk_user_prepa=".(isset($this->fk_user_prepa) ? $this->fk_user_prepa : "null").",";
-		$sql .= " fk_user_reception=".(isset($this->fk_user_reception) ? $this->fk_user_reception : "null").",";
-		$sql .= " date_valide=".(strval($this->date_valide) != '' ? "'".$this->date_valide."'" : 'null').",";
-		$sql .= " date_prepa=".(strval($this->date_prepa) != '' ? "'".$this->date_prepa."'" : 'null').",";
-		$sql .= " date_reception=".(strval($this->date_reception) != '' ? "'".$this->date_reception."'" : 'null').",";
-		$sql .= " model_pdf=".(strval($this->model_pdf) != '' ? "'".$this->model_pdf."'" : 'null').",";
-		$sql .= " last_main_doc=".(strval($this->last_main_doc) != '' ? "'".$this->last_main_doc."'" : 'null');
-
-		$sql .= " WHERE rowid=".((int) $this->id);
-	
-		$this->db->begin();
-
-		dol_syslog(get_class($this)."::update", LOG_DEBUG);
-		$resql = $this->db->query($sql);
-		if (!$resql) {
-			$error++;
-			$this->errors[] = "Error ".$this->db->lasterror();
-		}
-
-		if (!$error) {
-			$result = $this->insertExtraFields();
-			if ($result < 0) {
-				$error++;
-			}
-		}
-
-		// Commit or rollback
-		if ($error) {
-			foreach ($this->errors as $errmsg) {
-				dol_syslog(get_class($this)."::update ".$errmsg, LOG_ERR);
-				$this->error .= ($this->error ? ', '.$errmsg : $errmsg);
-			}
-			$this->db->rollback();
-			return -1 * $error;
-		} else {
-			$this->db->commit();
-			return 1;
-		}*/
 	}
 
 	/**
@@ -311,7 +265,7 @@ class Inventaire extends CommonObject
 	 *
 	 * @return	int			0 if OK, <>0 if KO (this function is used also by cron so only 0 is OK)
 	 */
-	public function doScheduledJob()
+	public function cronInventaire()
 	{
 		global $conf, $langs;
 
@@ -327,7 +281,35 @@ class Inventaire extends CommonObject
 
 		$this->db->begin();
 
-		// ...
+		$sql = "SELECT e.rowid, e.ref, nb_jours
+				FROM ".MAIN_DB_PREFIX."entrepot AS e
+				INNER JOIN ".MAIN_DB_PREFIX."inventaire_config AS c ON (c.fk_entrepot = e.rowid)
+				WHERE statut = 1;";
+
+		$result = $this->db->query($sql);
+		if ($result){
+			$num = $this->db->num_rows($result);
+			if ($num > 0)
+			{
+				$i = 0;
+				while ($i < $num)
+				{
+					$obj = $this->db->fetch_object($result);
+					$entrepot = $obj->rowid;
+					$nb_j = $obj->nb_jours;
+
+					ajoutProduitInventaire($entrepot, $nb_j);
+
+					$i++;
+				}
+			}
+
+			$this->db->free($resql);
+		}
+		else
+		{
+			dol_print_error($db);
+		}
 
 		$this->db->commit();
 

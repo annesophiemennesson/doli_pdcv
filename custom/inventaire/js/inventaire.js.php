@@ -96,4 +96,88 @@ if (empty($dolibarr_nocache)) {
 
 /* Javascript library of module Inventaire */
 
+function valider(_pos){
+    let _stock = parseFloat($('#stock_'+_pos).val());
+    if (isNaN(_stock) || _stock < 0){
+        alert(" ERREUR : Stock incorrect ");
+    }else{
+        $.ajax({
+            type: "POST", 
+            url: "ajax/ajax.php?action=valider&token=<?php echo newToken(); ?>",
+            data: $('#inv_'+_pos).serialize()
+        })
+        .done(function (data) {
+            if (data == "ok"){
+                validOK(_pos);
+            }else{
+                $('#panel_'+_pos+' .message').removeClass('hidden');
+                $('#panel_'+_pos+' .confirm').removeClass('hidden');
+                $('#panel_'+_pos+' .commentaire').removeClass('hidden');
+                $('#stock_'+_pos).attr('readonly', true);
+                $('#panel_'+_pos+' .button').attr('onclick', 'confirmer('+_pos+')');
+            }
+        });
+    }
+}
 
+function confirmer(_pos){
+    let _confirm = parseFloat($('#confirm_'+_pos).val());
+    let _comm = $('#commentaire_'+_pos).val();
+    if (isNaN(_confirm) || _confirm < 0){
+        alert(" ERREUR : Stock confirmé incorrect ");
+    }else if (_comm.length == 0){
+        alert(" ERREUR : Commentaire obligatoire ");
+    }else{
+        $.ajax({
+            type: "POST", 
+            url: "ajax/ajax.php?action=confirmer&token=<?php echo newToken(); ?>",
+            data: $('#inv_'+_pos).serialize()
+        })
+        .done(function (data) {
+            validOK(_pos);
+        });
+    }
+}
+
+function validOK(_pos){
+    let _nb = parseInt($('#nb_'+_pos).val());
+    _pos = parseInt(_pos);
+    if (_pos == _nb){
+        // Terminé
+        location.reload();
+    }else{
+        // On passe au suivant
+        $('#panel_'+_pos).remove();
+        let _next = parseInt(_pos+1);
+        $('#panel_'+_next).removeClass('hidden');
+    }
+}
+    
+function search_filters(_id = ""){
+	$.ajax({
+			method: "POST",
+			url: 'ajax/ajax.php',
+			data: { 
+			action: 'search_filters', 
+            id: _id,
+			search_entrepot: $('#search_entrepot').val(),
+			search_ref: $('#search_ref').val(),
+			search_delta: $('#search_delta').val(),
+			search_date: $('#search_date').val(),
+			token: '<?php echo newToken(); ?>' 
+		},
+			success: function(data) {
+			$('#toutes_demandes .oddeven').each(function(){
+				$(this).remove();
+			});
+			$(data).insertAfter('#toutes_demandes #liste_titre');
+		}
+	});
+}
+
+function reset_search (){
+	$('#toutes_demandes #search_date').val("");
+	$('#toutes_demandes select').each(function(){
+		$(this).val("");
+	});
+}

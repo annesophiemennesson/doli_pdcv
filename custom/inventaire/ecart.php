@@ -104,9 +104,27 @@ if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockintern
 	{
 		$num = $db->num_rows($resql);
 
-		print '<table class="noborder centpercent">';
-		print '<tr class="liste_titre">';
-		print '<th>Entrepôt</th><th>Produit</th><th>Stock attendu</th><th>Stock confirmé</th><th>Delta</th><th>Utilisateur</th><th>Commentaire</th><th>Date</th></tr>';
+		$req = "SELECT rowid, ref FROM ".MAIN_DB_PREFIX."entrepot WHERE statut = 1";
+		$res = $db->query($req);
+		$search_entrepot = '';
+		while ($ob = $db->fetch_object($res)){
+			$search_entrepot .= '<option value="'.$ob->rowid.'">'.$ob->ref.'</option>';
+		}
+
+		print '<table class="noborder centpercent" id="toutes_demandes">';
+		print '<tr class="liste_titre_filter">';
+		print '<td><select id="search_entrepot" name="search_entrepot"><option value="">Sélectionnez</option>'.$search_entrepot.'</select></td>';
+		print '<td><input type="text" id="search_ref" bame="search_ref" /></td>';
+		print '<td colspan="2"></td>';
+		print '<td><select id="search_delta" name="search_delta"><option value="">Sélectionnez</option><option value="sup">> 0</option><option value="inf">< 0</option></select></td>';		
+		print '<td></td>';
+		print '<td class="liste_titre center">';
+		print $form->selectDate(-1, 'search_date', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', 'Choisissez');
+		print '</td>';
+		print '<td class="right"><button onclick="search_filters();" class="liste_titre button_search reposition" name="button_search_x" value="x"><span class="fa fa-search"></span></button><button onclick="reset_search();" class="liste_titre button_removefilter reposition" name="button_removefilter_x" value="x"><span class="fa fa-remove"></span></button></td></tr>';
+		
+		print '<tr class="liste_titre" id="liste_titre">';
+		print '<th>Entrepôt</th><th>Produit</th><th>Stock attendu</th><th>Stock confirmé</th><th>Delta</th><th>Utilisateur</th><th>Date</th><th>Commentaire</th></tr>';
 		if ($num > 0)
 		{
 			$i = 0;
@@ -121,8 +139,8 @@ if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockintern
                 print '<td>'.$obj->stock_confirm.'</td>';
                 print '<td>'.$obj->delta.'</td>';
                 print '<td>'.$obj->user.'</td>';
-                print '<td>'.$obj->commentaire.'</td>';
 				print '<td>'.dol_print_date($obj->date_inventaire, "%d/%m/%Y %H:%M:%S").'</td>';
+                print '<td>'.$obj->commentaire.'</td>';
                 print '</tr>';
 				$i++;
 			}

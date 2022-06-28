@@ -173,7 +173,7 @@ class modInventaire extends DolibarrModules
 
 		// Array to add new pages in new tabs
 		$this->tabs = array(
-			'data' => 'product:+tabname1:Inventaire:@inventaire:1:/inventaire/tab_produit.php?id=__ID__'
+			'data' => 'product:+inventaire:Inventaire:@inventaire:1:/inventaire/tab_produit.php?id=__ID__'
 		);
 		//$this->tabs = array();
 		// Example:
