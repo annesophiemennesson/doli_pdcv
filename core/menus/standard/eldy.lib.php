@@ -1654,7 +1654,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			}
 
 			// Inventory
-			if (!empty($conf->stock->enabled)) {
+			/*if (!empty($conf->stock->enabled)) {
 				$langs->load("stocks");
 				if (empty($conf->global->MAIN_USE_ADVANCED_PERMS)) {
 					$newmenu->add("/product/inventory/list.php?leftmenu=stock_inventories", $langs->trans("Inventories"), 0, $user->rights->stock->lire, '', $mainmenu, 'stock', 0, '', '', '', img_picto('', 'inventory', 'class="pictofixedwidth"'));
@@ -1669,7 +1669,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 						$newmenu->add("/product/inventory/list.php?leftmenu=stock_inventories", $langs->trans("List"), 1, $user->rights->stock->inventory_advance->read);
 					}
 				}
-			}
+			}*/
 
 			// Shipments
 			if (!empty($conf->expedition->enabled)) {

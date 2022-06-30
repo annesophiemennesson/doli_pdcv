@@ -88,14 +88,15 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->detail*/)
+if (! empty($conf->inventaire->enabled) && $user->rights->inventaire->inventaire->ecart)
 {
-	$sql = 'SELECT e.ref, p.label, stock_attendu, stock_confirm, commentaire, date_inventaire, CONCAT(lastname, " ", firstname) AS user, CONCAT((if (stock_confirm > stock_attendu , "+" , "")), stock_confirm-stock_attendu) as delta
+	$sql = 'SELECT e.ref, p.label, p.rowid, stock_attendu, stock_confirm, commentaire, ef.uniteachat, date_inventaire, CONCAT(lastname, " ", firstname) AS user, CONCAT((if (stock_confirm > stock_attendu , "+" , "")), stock_confirm-stock_attendu) as delta
             FROM '.MAIN_DB_PREFIX.'inventaire_produit AS ip
             INNER JOIN '.MAIN_DB_PREFIX.'inventaire AS i ON (i.rowid = ip.fk_inventaire)
             INNER JOIN '.MAIN_DB_PREFIX.'entrepot AS e ON (e.rowid = i.fk_entrepot)
             INNER JOIN '.MAIN_DB_PREFIX.'product AS p ON (p.rowid = ip.fk_product)
             INNER JOIN '.MAIN_DB_PREFIX.'user AS u ON (u.rowid = ip.fk_user)
+			LEFT JOIN '.MAIN_DB_PREFIX.'product_extrafields as ef on (p.rowid = ef.fk_object) 
             WHERE stock_attendu != stock_confirm
             ORDER BY date_inventaire desc;';
 
@@ -121,20 +122,26 @@ if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockintern
 		print '<td class="liste_titre center">';
 		print $form->selectDate(-1, 'search_date', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', 'Choisissez');
 		print '</td>';
-		print '<td class="right"><button onclick="search_filters();" class="liste_titre button_search reposition" name="button_search_x" value="x"><span class="fa fa-search"></span></button><button onclick="reset_search();" class="liste_titre button_removefilter reposition" name="button_removefilter_x" value="x"><span class="fa fa-remove"></span></button></td></tr>';
+		print '<td class="floatright"><button onclick="search_filters();" class="liste_titre button_search reposition" name="button_search_x" value="x"><span class="fa fa-search"></span></button><button onclick="reset_search();" class="liste_titre button_removefilter reposition" name="button_removefilter_x" value="x"><span class="fa fa-remove"></span></button></td></tr>';
 		
 		print '<tr class="liste_titre" id="liste_titre">';
 		print '<th>Entrepôt</th><th>Produit</th><th>Stock attendu</th><th>Stock confirmé</th><th>Delta</th><th>Utilisateur</th><th>Date</th><th>Commentaire</th></tr>';
 		if ($num > 0)
 		{
 			$i = 0;
+			// On recupère les valeurs pour les unités achat vente
+			$sqlua = "SELECT param FROM ".MAIN_DB_PREFIX."extrafields WHERE elementtype = 'product' AND name = 'uniteachat'";
+			$resqlua = $db->query($sqlua);
+			$objua = $db->fetch_object($resqlua);
+			$ua = jsonOrUnserialize($objua->param)['options'];
 			while ($i < $num)
 			{
 				$obj = $db->fetch_object($resql);
+				$valua = $ua[$obj->uniteachat];
 
 				print '<tr class="oddeven">';
 				print '<td>'.$obj->ref.'</td>';
-				print '<td>'.$obj->label.'</td>';
+				print '<td><a target="_blank" href="'.dol_buildpath('/product/card.php?id='.$obj->rowid, 1).'"><strong>'.$obj->label.'</strong></a> ('.$valua.')</td>';
                 print '<td>'.$obj->stock_attendu.'</td>';
                 print '<td>'.$obj->stock_confirm.'</td>';
                 print '<td>'.$obj->delta.'</td>';

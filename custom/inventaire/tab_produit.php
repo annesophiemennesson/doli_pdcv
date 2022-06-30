@@ -58,9 +58,9 @@ $action = GETPOST('action', 'aZ09');
 $id = GETPOST('id', 'int');
 
 // Security check
-/*if (! $user->rights->transfertstockinterne->transfert_stock->detail) {
+if (! $user->rights->inventaire->inventaire->produit) {
 	accessforbidden();
-}*/
+}
 
 $socid = GETPOST('socid', 'int');
 if (isset($user->socid) && $user->socid > 0) {
@@ -89,13 +89,47 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (!empty($id) && ! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->detail*/)
+if (!empty($id) && ! empty($conf->inventaire->enabled) && $user->rights->inventaire->inventaire->produit)
 {
 	$object = new Product($db);
 	$result = $object->fetch($id);
 	$head = product_prepare_head($object);
 	$titre = "Historique des inventaires";
 	print dol_get_fiche_head($head, 'inventaire', $titre, -1, 'product');
+
+	if ($user->rights->inventaire->inventaire->ajout){
+		$sql = "SELECT e.rowid, e.ref
+				FROM ".MAIN_DB_PREFIX."entrepot AS e
+				INNER JOIN ".MAIN_DB_PREFIX."inventaire_config AS c ON (c.fk_entrepot = e.rowid)
+				WHERE statut = 1;";
+		$result = $db->query($sql);
+		if ($result){
+			$num = $db->num_rows($result);
+			$ret = "<option value=''>Sélectionnez</option>";
+			if ($num > 0)
+			{
+				$i = 0;
+				while ($i < $num)
+				{
+					$obj = $db->fetch_object($result);
+					$ret .= "<option value='".$obj->rowid."'>".$obj->ref."</option>";
+					$i++;
+				}
+			}
+			print '<div class="center">';
+			print '<p><strong>Ajouter le produit aux inventaires à faire</strong></p>';
+			print '<p>';
+			print '<select id="entrepot" name="entrepot">'.$ret.'</select><a class="button" onclick="ajoutProduitInventaire('.$id.');">Ajouter</a>';
+			print '</p>';
+			print "</div><hr/><br/>";
+	
+			$db->free($resql);
+		}
+		else
+		{
+			dol_print_error($db);
+		}
+	}
 
 	$sql = "SELECT e.ref, stock_attendu, stock_confirm, commentaire, date_inventaire, CONCAT(lastname, ' ', firstname) AS user, CONCAT((if (stock_confirm > stock_attendu , '+' , '')), stock_confirm-stock_attendu) as delta
 	 		FROM ".MAIN_DB_PREFIX."inventaire_produit AS ip
@@ -125,7 +159,7 @@ if (!empty($id) && ! empty($conf->inventaire->enabled) /*&& $user->rights->trans
 		print '<td class="liste_titre center">';
 		print $form->selectDate(-1, 'search_date', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', 'Choisissez');
 		print '</td>';
-		print '<td class="right"><button onclick="search_filters('.$id.');" class="liste_titre button_search reposition" name="button_search_x" value="x"><span class="fa fa-search"></span></button><button onclick="reset_search();" class="liste_titre button_removefilter reposition" name="button_removefilter_x" value="x"><span class="fa fa-remove"></span></button></td></tr>';
+		print '<td class="floatright"><button onclick="search_filters('.$id.');" class="liste_titre button_search reposition" name="button_search_x" value="x"><span class="fa fa-search"></span></button><button onclick="reset_search();" class="liste_titre button_removefilter reposition" name="button_removefilter_x" value="x"><span class="fa fa-remove"></span></button></td></tr>';
 		
 		print '<tr class="liste_titre" id="liste_titre">';
 		print '<th>Entrepôt</th><th>Stock attendu</th><th>Stock confirmé</th><th>Delta</th><th>Utilisateur</th><th>Date</th><th>Commentaire</th></tr>';

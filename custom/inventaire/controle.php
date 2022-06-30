@@ -57,9 +57,9 @@ $action = GETPOST('action', 'aZ09');
 $id = GETPOST('id', 'int');
 
 // Security check
-/*if (! $user->rights->transfertstockinterne->transfert_stock->detail) {
+if (! $user->rights->inventaire->inventaire->do) {
 	accessforbidden();
-}*/
+}
 
 $socid = GETPOST('socid', 'int');
 if (isset($user->socid) && $user->socid > 0) {
@@ -88,12 +88,12 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if ( !empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->detail*/)
+if ( !empty($conf->inventaire->enabled) && $user->rights->inventaire->inventaire->do)
 {
     if (empty($user->fk_warehouse)){
         print '<p><strong>Vous n\'êtes lié à aucun entrepôt, vous ne pouvez donc faire aucun inventaire<br/>Effectuez la modification dans votre fiche utilisateur, déconnectez-vous et reconnectez-vous pour réessayer.</strong></p>';
     }else{
-        $sql = "SELECT p.label, ef.uniteachat, reel, ip.fk_product, ip.rowid 
+        $sql = "SELECT p.label, ef.uniteachat, ip.fk_product, ip.rowid 
                 FROM ".MAIN_DB_PREFIX."inventaire as i
                 INNER JOIN ".MAIN_DB_PREFIX."inventaire_produit AS ip ON (ip.fk_inventaire = i.rowid)
                 INNER JOIN ".MAIN_DB_PREFIX."product AS p ON (ip.fk_product = p.rowid)
@@ -122,22 +122,47 @@ if ( !empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockintern
                 {
                     $obj = $db->fetch_object($resql);
                     $valua = $ua[$obj->uniteachat];
+
+                    // Lots
+                    $sql2 = "SELECT pb.eatby, pb.batch, pb.qty, ps.fk_product
+                            FROM ".MAIN_DB_PREFIX."product_stock AS ps
+                            INNER JOIN ".MAIN_DB_PREFIX."product_batch AS pb ON (ps.rowid = pb.fk_product_stock)
+                            WHERE ps.fk_entrepot = ".$user->fk_warehouse." AND ps.fk_product = ".$obj->fk_product;
+               
+                    $resql2 = $db->query($sql2);
+                    $nb = $db->num_rows($resql2);
                  
                     print '<div class="panel panel-default '.($i == 1 ? "" : "hidden").'" id="panel_'.$i.'">';
                     print '<form action="#" method="POST" id="inv_'.$i.'">';
-                    print '<div class="panel-heading">Inventaire <span class="right">'.$i.'/'.$num.'</span></div>';
-                    print ' <div class="panel-body text-center"><input type="hidden" name="nb_prod" value="'.$num.'" id="nb_'.$i.'" />';
-                    print '<input type="hidden" name="attendu" value="'.$obj->reel.'" id="attendu_'.$i.'" />';
+                    print '<div class="panel-heading">Inventaire <span class="floatright">'.$i.'/'.$num.'</span></div>';
+                    print '<div class="panel-body text-center"><input type="hidden" name="nb_prod" value="'.$num.'" id="nb_'.$i.'" />';
                     print '<input type="hidden" name="produit" value="'.$obj->fk_product.'" id="produit_'.$i.'" />';
                     print '<input type="hidden" name="invproduit" value="'.$obj->rowid.'" id="invproduit_'.$i.'" />';
-                    print '<input type="hidden" name="entrepot" value="'.$user->fk_warehouse.'" id="entrepot_'.$i.'" />';
                     print '<p><strong>'.$obj->label.'</strong> ('.$valua.')</p>';
                     print '<p class="reel"><label for="stock_'.$i.'">Stock</label><input type="number" name="stock" min="0" id="stock_'.$i.'" /></p>';
                     print '<hr/>';
                     print '<p class="hidden message"><strong>Stock différent, merci de confirmer et mettre un commentaire</strong></p>';
                     print '<p class="hidden confirm"><label for="confirm_'.$i.'">Stock confirmé</label><input type="number" name="confirm" min="0" id="confirm_'.$i.'" /></p>';
                     print '<p class="hidden commentaire"><label for="commentaire_'.$i.'">Commentaire</label><input type="text" name="commentaire" id="commentaire_'.$i.'" /></p>';
-                    print '<a class="button" href="#" onclick="valider('.$i.')">Valider</a></div>';
+                    if ($nb > 0){
+                        $j = 0;
+                        print '<hr/>';
+                        print '<div class="lot hidden">';
+                        print '<p><strong>Merci d\'entrer les stocks pour chacun des lots suivants</strong></p>';
+                        while ($j < $nb){
+                            $lot = $db->fetch_object($resql2);
+                            $dlc = "NC";
+                            if (!empty($lot->eatby))
+                                $dlc = dol_print_date($lot->eatby, "%d/%m/%Y");                            
+                            print '<p><label for="lot['.$lot->batch.']">Stock pour le lot #'.$lot->batch.' (DLC: '.$dlc.')</label><input type="number" class="stocklot" name="lot['.$lot->batch.']" min="0" id="lot['.$lot->batch.']" value="0" /></p>';
+                            $j++;
+                        }
+                        print '<div class="pluslot hidden"></div>';
+                        print '<p class="autrelot"><a class="button btn_lot" href="#" onclick="autrelot('.$i.')">Autre lot</a></p>';
+                        print '</div>';
+                    }                   
+                    print '<a class="button btn_valid" href="#" onclick="validerinventaire('.$i.')">Valider</a></div>';
+                    print '</div>';
                     print '</form>';
                     print '</div>';
                     $i++;
@@ -161,8 +186,24 @@ if ( !empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockintern
 //END MODULEBUILDER DRAFT MYOBJECT */
 
 
-print '</div>';
-
+print '</div>';?>
+<script>
+let _compteur = 0;    
+$('.stocklot').on('change', function(){
+    let _pos = $(this).closest('.panel').attr('id').split('_')[1];
+    let qte = parseFloat($(this).val());
+    if (qte < 0 || isNaN(qte) ){
+        alert(" ERREUR: La quantité ne peut être inférieure à 0 ");
+        $(this).val(0);
+    }
+    let _total = 0;
+	$('#panel_'+_pos+' .stocklot').each(function(){
+		_total += parseFloat($(this).val());
+	});
+    $('#confirm_'+_pos).val(_total);      
+});
+</script>
+<?php
 // End of page
 llxFooter();
 $db->close();

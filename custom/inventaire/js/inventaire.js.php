@@ -96,7 +96,7 @@ if (empty($dolibarr_nocache)) {
 
 /* Javascript library of module Inventaire */
 
-function valider(_pos){
+function validerinventaire(_pos){
     let _stock = parseFloat($('#stock_'+_pos).val());
     if (isNaN(_stock) || _stock < 0){
         alert(" ERREUR : Stock incorrect ");
@@ -114,13 +114,17 @@ function valider(_pos){
                 $('#panel_'+_pos+' .confirm').removeClass('hidden');
                 $('#panel_'+_pos+' .commentaire').removeClass('hidden');
                 $('#stock_'+_pos).attr('readonly', true);
-                $('#panel_'+_pos+' .button').attr('onclick', 'confirmer('+_pos+')');
+                $('#panel_'+_pos+' .btn_valid').attr('onclick', 'confirmerinventaire('+_pos+')');
+                if ($('#panel_'+_pos+' .lot').length == 1){
+                    $('#panel_'+_pos+' .lot').removeClass('hidden');
+                    $('#confirm_'+_pos).attr('readonly', true);
+                }
             }
         });
     }
 }
 
-function confirmer(_pos){
+function confirmerinventaire(_pos){
     let _confirm = parseFloat($('#confirm_'+_pos).val());
     let _comm = $('#commentaire_'+_pos).val();
     if (isNaN(_confirm) || _confirm < 0){
@@ -128,15 +132,50 @@ function confirmer(_pos){
     }else if (_comm.length == 0){
         alert(" ERREUR : Commentaire obligatoire ");
     }else{
+        $('select.autrelot').each(function(){
+            if ($(this).val() != ""){
+                let _num = $(this).attr('id').split('_')[1];		
+                let _batch = $(this).val(); 
+                let _qte = $('#autre_lot_'+_num).val();
+                let _input = "<input type='hidden' name='autrelot["+_batch+"]' value='"+_qte+"' />";
+                $('#inv_'+_pos).append(_input);
+            }
+        });
         $.ajax({
             type: "POST", 
             url: "ajax/ajax.php?action=confirmer&token=<?php echo newToken(); ?>",
             data: $('#inv_'+_pos).serialize()
         })
         .done(function (data) {
-            validOK(_pos);
+			validOK(_pos);
         });
     }
+}
+
+function autrelot(_pos){  
+    _compteur++;  
+    $.ajax({
+        type: "POST", 
+        url: "ajax/ajax.php?action=autrelot&token=<?php echo newToken(); ?>&compteur="+_compteur,
+        data: $('#inv_'+_pos).serialize()
+    })
+    .done(function (data) {
+        $('#panel_'+_pos+' .autrelot').removeClass('hidden');
+        $('#panel_'+_pos+' .autrelot').append(data);
+        $('.stocklot').on('change', function(){
+            let _pos = $(this).closest('.panel').attr('id').split('_')[1];
+            let qte = parseFloat($(this).val());
+            if (qte < 0 || isNaN(qte) ){
+                alert(" ERREUR: La quantité ne peut être inférieure à 0 ");
+                $(this).val(0);
+            }
+            let _total = 0;
+            $('#panel_'+_pos+' .stocklot').each(function(){
+                _total += parseFloat($(this).val());
+            });
+            $('#confirm_'+_pos).val(_total);      
+        });
+    });
 }
 
 function validOK(_pos){
@@ -158,14 +197,14 @@ function search_filters(_id = ""){
 			method: "POST",
 			url: 'ajax/ajax.php',
 			data: { 
-			action: 'search_filters', 
-            id: _id,
-			search_entrepot: $('#search_entrepot').val(),
-			search_ref: $('#search_ref').val(),
-			search_delta: $('#search_delta').val(),
-			search_date: $('#search_date').val(),
-			token: '<?php echo newToken(); ?>' 
-		},
+                action: 'search_filters', 
+                id: _id,
+                search_entrepot: $('#search_entrepot').val(),
+                search_ref: $('#search_ref').val(),
+                search_delta: $('#search_delta').val(),
+                search_date: $('#search_date').val(),
+                token: '<?php echo newToken(); ?>' 
+            },
 			success: function(data) {
 			$('#toutes_demandes .oddeven').each(function(){
 				$(this).remove();
@@ -180,4 +219,29 @@ function reset_search (){
 	$('#toutes_demandes select').each(function(){
 		$(this).val("");
 	});
+}
+
+function ajoutProduitInventaire(_id){
+    let _entrepot = $('#entrepot').val();
+    if (_entrepot == ""){
+        alert("Vous devez sélectionner un entrepôt / magasin");
+    }else{
+        $.ajax({
+            type: "POST", 
+            url: "ajax/ajax.php",
+			data: { 
+                action: 'ajout_produit', 
+                id: _id,
+                entrepot: _entrepot,
+                token: '<?php echo newToken(); ?>' 
+            },
+        })
+        .done(function (data) {
+            if (data == "OK"){
+                alert("Produit ajouté !");
+            }else{
+                alert("Produit déjà dans la liste");
+            }
+        });
+    }
 }

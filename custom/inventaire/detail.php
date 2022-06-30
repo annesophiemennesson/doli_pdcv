@@ -57,9 +57,9 @@ $action = GETPOST('action', 'aZ09');
 $id = GETPOST('id', 'int');
 
 // Security check
-/*if (! $user->rights->transfertstockinterne->transfert_stock->detail) {
+if (! $user->rights->inventaire->inventaire->detail) {
 	accessforbidden();
-}*/
+}
 
 $socid = GETPOST('socid', 'int');
 if (isset($user->socid) && $user->socid > 0) {
@@ -88,7 +88,7 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (!empty($id) && ! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->detail*/)
+if (!empty($id) && ! empty($conf->inventaire->enabled) && $user->rights->inventaire->inventaire->detail)
 {
 	$sql = "SELECT date_creation, ref
 			FROM ".MAIN_DB_PREFIX."inventaire AS i
@@ -100,7 +100,7 @@ if (!empty($id) && ! empty($conf->inventaire->enabled) /*&& $user->rights->trans
 
 	print '<h3>Inventaire de '.$obj->ref.' du '.dol_print_date($obj->date_creation, "%d/%m/%Y").'</h3>';
 
-	$sql = "SELECT p.label, CONCAT(lastname, ' ', firstname) AS user, stock_attendu, stock_reel, stock_confirm, date_inventaire, commentaire, ef.uniteachat
+	$sql = "SELECT p.label, p.rowid, CONCAT(lastname, ' ', firstname) AS user, stock_attendu, stock_reel, stock_confirm, date_inventaire, commentaire, ef.uniteachat
 			FROM ".MAIN_DB_PREFIX."inventaire_produit AS i
 			INNER JOIN ".MAIN_DB_PREFIX."product as p ON (i.fk_product = p.rowid)
 			LEFT JOIN ".MAIN_DB_PREFIX."user as u ON (i.fk_user = u.rowid)
@@ -130,7 +130,7 @@ if (!empty($id) && ! empty($conf->inventaire->enabled) /*&& $user->rights->trans
 				$valua = $ua[$obj->uniteachat];
 
 				print '<tr class="oddeven">';
-				print '<td><strong>'.$obj->label.'</strong> ('.$valua.')</td>';
+				print '<td><a target="_blank" href="'.dol_buildpath('/product/card.php?id='.$obj->rowid, 1).'"><strong>'.$obj->label.'</strong></a> ('.$valua.')</td>';
                 print '<td>'.$obj->stock_attendu.'</td>';
                 print '<td>'.$obj->stock_reel.'</td>';
                 print '<td>'.$obj->stock_confirm.'</td>';

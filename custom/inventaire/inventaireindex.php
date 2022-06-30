@@ -96,7 +96,7 @@ print '<div class="fichecenter">';
 
 print '<a href="'.dol_buildpath('/custom/inventaire/configuration.php', 1).'">Configuration</a><br/>';
 print '<a href="'.dol_buildpath('/custom/inventaire/liste.php', 1).'">Liste des inventaires</a><br/>';
-print '<a href="'.dol_buildpath('/custom/inventaire/new.php', 1).'">Nouveau</a><br/>';
+//print '<a href="'.dol_buildpath('/custom/inventaire/new.php', 1).'">Nouveau</a><br/>';
 print '<a href="'.dol_buildpath('/custom/inventaire/controle.php', 1).'">Faire l\'inventaire</a><br/>';
 print '<a href="'.dol_buildpath('/custom/inventaire/ecart.php', 1).'">Ecarts de stock</a><br/>';
 print '</div>';

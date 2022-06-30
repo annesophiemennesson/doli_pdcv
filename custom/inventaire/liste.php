@@ -84,7 +84,7 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->create*/)
+if (! empty($conf->inventaire->enabled) && $user->rights->inventaire->inventaire->read)
 {
     $sql = "SELECT i.rowid, e.ref, date_creation, COUNT(fk_product) AS nb_prod, SUM(IF (stock_confirm IS NOT NULL, 1, 0)) AS nb_prod_fait
             FROM ".MAIN_DB_PREFIX."inventaire AS i

@@ -130,7 +130,7 @@ div.mainmenu.inventaire {
 	width: 50%;
 }
 
-.right{
+.floatright{
 	float: right;
 }
 
@@ -147,7 +147,7 @@ div.mainmenu.inventaire {
 	text-align: center;
 }
 
-label {
+.panel label {
 	margin-right: 15px;
 }
 

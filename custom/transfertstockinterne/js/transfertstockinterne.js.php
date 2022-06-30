@@ -135,7 +135,7 @@ function valideReception(rowid){
 		.done(function (data) {
 			$('#produit_'+rowid).addClass('green');
 			$('.more_'+rowid).addClass('hidden');
-			data = JSON.parse(data);;
+			data = JSON.parse(data);
 			if (data.action == "askTemperature"){
 				temperature(data.transfert_stock, 'reception');
 			}

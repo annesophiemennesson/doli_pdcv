@@ -104,7 +104,7 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (! empty($conf->inventaire->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->create*/)
+if (! empty($conf->inventaire->enabled) && $user->rights->inventaire->inventaire->config)
 {
     $sql = "SELECT e.rowid, e.ref, nb_jours
             FROM ".MAIN_DB_PREFIX."entrepot AS e

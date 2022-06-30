@@ -1,0 +1,62 @@
+{
+    "packages": [
+        {
+            "name": "splash/phpcore",
+            "version": "dev-master",
+            "version_normalized": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SplashSync/Php-Core.git",
+                "reference": "3dfed22a3226c5f5d003687b7ced837bfcc206ff"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SplashSync/Php-Core/zipball/3dfed22a3226c5f5d003687b7ced837bfcc206ff",
+                "reference": "3dfed22a3226c5f5d003687b7ced837bfcc206ff",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2"
+            },
+            "require-dev": {
+                "badpixxel/php-sdk": "dev-main",
+                "splash/console": "dev-master"
+            },
+            "time": "2021-03-08T16:16:42+00:00",
+            "default-branch": true,
+            "type": "package",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Splash\\": "",
+                    "Splash\\Local\\": "../../../Resources"
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Splash Sync",
+                    "email": "contact@splashsync.com"
+                },
+                {
+                    "name": "Bernard Paquier",
+                    "email": "eshop.bpaquier@gmail.com"
+                }
+            ],
+            "description": "Splash Fundation Module for All Php Applications",
+            "support": {
+                "issues": "https://github.com/SplashSync/Php-Core/issues",
+                "source": "https://github.com/SplashSync/Php-Core/tree/master"
+            },
+            "install-path": "../splash/phpcore"
+        }
+    ],
+    "dev": false,
+    "dev-package-names": []
+}

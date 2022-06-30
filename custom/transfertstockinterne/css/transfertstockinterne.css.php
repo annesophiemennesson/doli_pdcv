@@ -135,7 +135,7 @@ div.mainmenu.transfertstockinterne {
 	width: 50%;
 }
 
-input[type=number]{
+.modal-content input[type=number]{
 	width: 120px;
 }
 

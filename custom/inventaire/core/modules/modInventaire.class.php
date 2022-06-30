@@ -173,7 +173,7 @@ class modInventaire extends DolibarrModules
 
 		// Array to add new pages in new tabs
 		$this->tabs = array(
-			'data' => 'product:+inventaire:Inventaire:@inventaire:1:/inventaire/tab_produit.php?id=__ID__'
+			'data' => 'product:+inventaire:Inventaire:@inventaire:$user->rights->inventaire->inventaire->produit:/inventaire/tab_produit.php?id=__ID__'
 		);
 		//$this->tabs = array();
 		// Example:
@@ -268,19 +268,39 @@ class modInventaire extends DolibarrModules
 		// Add here entries to declare new permissions
 		/* BEGIN MODULEBUILDER PERMISSIONS */
 		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
-		$this->rights[$r][1] = 'Read objects of Inventaire'; // Permission label
+		$this->rights[$r][1] = 'Configurer les inventaires'; // Permission label
 		$this->rights[$r][4] = 'inventaire';
-		$this->rights[$r][5] = 'read'; // In php code, permission will be checked by test if ($user->rights->inventaire->inventaire->read)
+		$this->rights[$r][5] = 'config'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->cretae)
 		$r++;
 		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
-		$this->rights[$r][1] = 'Create/Update objects of Inventaire'; // Permission label
+		$this->rights[$r][1] = 'Voir la liste des inventaires'; // Permission label
 		$this->rights[$r][4] = 'inventaire';
-		$this->rights[$r][5] = 'write'; // In php code, permission will be checked by test if ($user->rights->inventaire->inventaire->write)
+		$this->rights[$r][5] = 'read'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->list)
 		$r++;
 		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
-		$this->rights[$r][1] = 'Delete objects of Inventaire'; // Permission label
+		$this->rights[$r][1] = 'Voir le détail d\'un inventaire'; // Permission label
 		$this->rights[$r][4] = 'inventaire';
-		$this->rights[$r][5] = 'delete'; // In php code, permission will be checked by test if ($user->rights->inventaire->inventaire->delete)
+		$this->rights[$r][5] = 'detail'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->list)
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Faire l\'inventaire'; // Permission label
+		$this->rights[$r][4] = 'inventaire';
+		$this->rights[$r][5] = 'do'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->list)
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Voir les écarts de stock'; // Permission label
+		$this->rights[$r][4] = 'inventaire';
+		$this->rights[$r][5] = 'ecart'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->prepare)
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Voir les inventaires d\'un produit'; // Permission label
+		$this->rights[$r][4] = 'inventaire';
+		$this->rights[$r][5] = 'produit'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->reception)
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Ajouter un produit aux inventaires à faire'; // Permission label
+		$this->rights[$r][4] = 'inventaire';
+		$this->rights[$r][5] = 'ajout'; // In php code, permission will be checked by test if ($user->rights->transfertstockinterne->transfert_stock->reception)
 		$r++;
 		/* END MODULEBUILDER PERMISSIONS */
 
@@ -289,7 +309,7 @@ class modInventaire extends DolibarrModules
 		$r = 0;
 		// Add here entries to declare new menus
 		/* BEGIN MODULEBUILDER TOPMENU */
-		$this->menu[$r++] = array(
+		/*$this->menu[$r++] = array(
 			'fk_menu'=>'', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
 			'type'=>'top', // This is a Top menu entry
 			'titre'=>'Inventaire',
@@ -303,7 +323,7 @@ class modInventaire extends DolibarrModules
 			'perms'=>'1', // Use 'perms'=>'$user->rights->inventaire->inventaire->read' if you want your menu with a permission rules
 			'target'=>'',
 			'user'=>0, // 0=Menu for internal users, 1=external users, 2=both
-		);
+		);*/
 		/* END MODULEBUILDER TOPMENU */
 		/* BEGIN MODULEBUILDER LEFTMENU INVENTAIRE
 		$this->menu[$r++]=array(
@@ -353,13 +373,13 @@ class modInventaire extends DolibarrModules
 
         $this->menu[$r++]=array(
             // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-            'fk_menu'=>'fk_mainmenu=inventaire',
+            'fk_menu'=>'fk_mainmenu=products',
             // This is a Left menu entry
             'type'=>'left',
-            'titre'=>'List Inventaire',
-            'mainmenu'=>'inventaire',
+            'titre'=>'Inventaires',
+            'mainmenu'=>'products',
             'leftmenu'=>'inventaire_inventaire',
-            'url'=>'/inventaire/inventaire_list.php',
+            'url'=>'/inventaire/inventaireindex.php',
             // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
             'langs'=>'inventaire@inventaire',
             'position'=>1100+$r,
@@ -373,13 +393,73 @@ class modInventaire extends DolibarrModules
         );
         $this->menu[$r++]=array(
             // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-            'fk_menu'=>'fk_mainmenu=inventaire,fk_leftmenu=inventaire_inventaire',
+            'fk_menu'=>'fk_mainmenu=products,fk_leftmenu=inventaire_inventaire',
             // This is a Left menu entry
             'type'=>'left',
-            'titre'=>'New Inventaire',
-            'mainmenu'=>'inventaire',
-            'leftmenu'=>'inventaire_inventaire',
-            'url'=>'/inventaire/inventaire_card.php?action=create',
+            'titre'=>'Configuration',
+            'mainmenu'=>'products',
+            'leftmenu'=>'inventaire_config',
+            'url'=>'/inventaire/configuration.php',
+            // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+            'langs'=>'inventaire@inventaire',
+            'position'=>1100+$r,
+            // Define condition to show or hide menu entry. Use '$conf->inventaire->enabled' if entry must be visible if module is enabled. Use '$leftmenu==\'system\'' to show if leftmenu system is selected.
+            'enabled'=>'$conf->inventaire->enabled',
+            // Use 'perms'=>'$user->rights->inventaire->level1->level2' if you want your menu with a permission rules
+            'perms'=>'1',
+            'target'=>'',
+            // 0=Menu for internal users, 1=external users, 2=both
+            'user'=>2
+        );
+        $this->menu[$r++]=array(
+            // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
+            'fk_menu'=>'fk_mainmenu=products,fk_leftmenu=inventaire_inventaire',
+            // This is a Left menu entry
+            'type'=>'left',
+            'titre'=>'Liste des inventaires',
+            'mainmenu'=>'products',
+            'leftmenu'=>'inventaire_list',
+            'url'=>'/inventaire/liste.php',
+            // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+            'langs'=>'inventaire@inventaire',
+            'position'=>1100+$r,
+            // Define condition to show or hide menu entry. Use '$conf->inventaire->enabled' if entry must be visible if module is enabled. Use '$leftmenu==\'system\'' to show if leftmenu system is selected.
+            'enabled'=>'$conf->inventaire->enabled',
+            // Use 'perms'=>'$user->rights->inventaire->level1->level2' if you want your menu with a permission rules
+            'perms'=>'1',
+            'target'=>'',
+            // 0=Menu for internal users, 1=external users, 2=both
+            'user'=>2
+        );
+        $this->menu[$r++]=array(
+            // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
+            'fk_menu'=>'fk_mainmenu=products,fk_leftmenu=inventaire_inventaire',
+            // This is a Left menu entry
+            'type'=>'left',
+            'titre'=>'Faire l\'inventaire',
+            'mainmenu'=>'products',
+            'leftmenu'=>'inventaire_controle',
+            'url'=>'/inventaire/controle.php',
+            // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
+            'langs'=>'inventaire@inventaire',
+            'position'=>1100+$r,
+            // Define condition to show or hide menu entry. Use '$conf->inventaire->enabled' if entry must be visible if module is enabled. Use '$leftmenu==\'system\'' to show if leftmenu system is selected.
+            'enabled'=>'$conf->inventaire->enabled',
+            // Use 'perms'=>'$user->rights->inventaire->level1->level2' if you want your menu with a permission rules
+            'perms'=>'1',
+            'target'=>'',
+            // 0=Menu for internal users, 1=external users, 2=both
+            'user'=>2
+        );
+        $this->menu[$r++]=array(
+            // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
+            'fk_menu'=>'fk_mainmenu=products,fk_leftmenu=inventaire_inventaire',
+            // This is a Left menu entry
+            'type'=>'left',
+            'titre'=>'Ecarts de stock',
+            'mainmenu'=>'products',
+            'leftmenu'=>'inventaire_ecart',
+            'url'=>'/inventaire/ecart.php',
             // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
             'langs'=>'inventaire@inventaire',
             'position'=>1100+$r,
