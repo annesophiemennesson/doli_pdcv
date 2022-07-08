@@ -55,7 +55,6 @@ $langs->loadLangs(array("transfertstockinterne@transfertstockinterne"));
 $action = GETPOST('action', 'aZ09');
 $message = GETPOST('message', 'alpha');
 
-
 // Security check
 if (! $user->rights->transfertstockinterne->transfert_stock->list) {
 	accessforbidden();

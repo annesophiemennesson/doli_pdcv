@@ -12,6 +12,7 @@
  * Copyright (C) 2016		Ferran Marcet			<fmarcet@2byte.es>
  * Copyright (C) 2016		Yasser Carreón			<yacasia@gmail.com>
  * Copyright (C) 2018	    Quentin Vial-Gouteyron  <quentin.vial-gouteyron@atm-consulting.fr>
+ * Copyright (C) 2022		Anne-Sophie Mennesson	<annesophie.mennesson@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +62,7 @@ if (!empty($conf->projet->enabled)) {
 	require_once DOL_DOCUMENT_ROOT.'/projet/class/project.class.php';
 	require_once DOL_DOCUMENT_ROOT.'/core/class/html.formprojet.class.php';
 }
+require_once DOL_DOCUMENT_ROOT.'/custom/gestionrebuts/class/demandeavoir.class.php';
 
 $langs->loadLangs(array("receptions", "companies", "bills", 'deliveries', 'orders', 'stocks', 'other', 'propal', 'sendings'));
 
@@ -311,6 +313,9 @@ if (empty($reshook)) {
 				$num++;
 			}
 		}
+		// DOHOOKS
+		$err_rebut = "Commentaire obligatoire en cas de rebut";
+		$err_qte = "La quantité en rebut ne peut pas être supérieure à la quantité reçue (ni < 0)";
 
 		for ($i = 1; $i <= $num; $i++) {
 			$idl = "idl".$i;
@@ -331,6 +336,18 @@ if (empty($reshook)) {
 
 			// Extrafields
 			$array_options[$i] = $extrafields->getOptionalsFromPost($object->table_element_line, $i);
+			// DOHOOKS
+			if (!empty($array_options[$i]['options_qterebut'])){
+				$qte_rebut = price2num($array_options[$i]['options_qterebut'], 'MS');
+				if (empty($array_options[$i]['options_commrebut'])){
+					setEventMessages($err_rebut, $object->errors, 'errors');
+					$error++;
+				}
+				if ($qte_rebut < 0 || $qte_rebut > price2num(GETPOST($qty, 'alpha'), 'MS')){
+					setEventMessages($err_qte, $object->errors, 'errors');
+					$error++;
+				}
+			}
 		}
 
 
@@ -422,11 +439,108 @@ if (empty($reshook)) {
 		$object->fetch_thirdparty();
 
 		$result = $object->valid($user);
-
 		if ($result < 0) {
 			$langs->load("errors");
 			setEventMessages($langs->trans($object->error), null, 'errors');
 		} else {
+			// DOHOOKS
+			// Generation demande d'avoir
+			$sql = "SELECT fk_product, qterebut, commrebut, batch, eatby, d.cost_price, fk_entrepot
+					FROM " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch AS d
+					INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur_dispatch_extrafields AS e ON (e.fk_object = d.rowid)
+					WHERE fk_reception = ".$id." AND qterebut > 0;";
+
+			$resql = $db->query($sql);
+			$nb = $db->num_rows($resql);
+			if ($nb > 0){
+				$obj = new DemandeAvoir($db);
+				$obj->fk_reception = $id;
+				$obj->create($user);
+				$id_demande = $obj->id;
+
+				$sql2 = "SELECT rowid FROM ".MAIN_DB_PREFIX."entrepot WHERE ref = 'Rebut'";
+				$res2 = $db->query($sql2);
+				$obj = $db->fetch_object($res2);
+				$entrepot_rebut = $obj->rowid;
+
+				$i = 0;
+				while ($i < $nb){
+					$rebut = $db->fetch_object($resql);
+
+					$_obj = new DemandeAvoirLigne($db);
+					$_obj->fk_demande_avoir = $id_demande;
+					$_obj->fk_product = $rebut->fk_product;
+					$_obj->qty = $rebut->qterebut;
+					$_obj->price = $rebut->cost_price;
+					$_obj->commentaire = $rebut->commrebut;
+					$_obj->eatby = $rebut->eatby;
+					$_obj->batch = $rebut->batch;
+					$_obj->create($user);
+
+					$i++;					
+        
+					$prod = new Product($db);
+					$result = $prod->fetch($rebut->fk_product);
+
+					if (empty($rebut->batch)){
+						// Remove stock
+						$result1 = $prod->correct_stock(
+							$user,
+							$rebut->fk_entrepot,
+							$rebut->qterebut,
+							1,
+							"Mise au rebut suite réception",
+							0,
+							""
+						);
+
+						// Add stock
+						$result2 = $prod->correct_stock(
+							$user,
+							$entrepot_rebut,
+							$rebut->qterebut,
+							0,
+							$rebut->commrebut,
+							0,
+							""
+						);
+					}else{
+						// Remove stock
+						$result1 = $prod->correct_stock_batch(
+							$user,
+							$rebut->fk_entrepot,
+							$rebut->qterebut,
+							1,
+							"Mise au rebut suite réception",
+							0,
+							"",
+							"",
+							$rebut->batch,
+							""
+						);
+
+						// Add stock
+						$result2 = $prod->correct_stock_batch(
+							$user,
+							$entrepot_rebut,
+							$rebut->qterebut,
+							0,
+							$rebut->commrebut,
+							0,
+							"",
+							"",
+							$rebut->batch,
+							""
+						);
+					}
+				}
+
+				/*$result = $obj->generateDocument('demandeavoir', $langs);
+				if ($result < 0) {
+					dol_print_error($db, $result);
+				}*/
+			}
+
 			// Define output language
 			if (empty($conf->global->MAIN_DISABLE_PDF_AUTOUPDATE)) {
 				$outputlangs = $langs;

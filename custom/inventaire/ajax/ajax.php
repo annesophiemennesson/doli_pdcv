@@ -188,7 +188,6 @@ if ($action == 'valider') {
                         $objreq->batch,
                         ""
                     );
-                    var_dump($result2);
                 }
             }
             
@@ -305,6 +304,7 @@ if ($action == 'valider') {
             FROM ".MAIN_DB_PREFIX."inventaire AS i
             LEFT JOIN ".MAIN_DB_PREFIX."inventaire_produit AS ip ON (i.rowid = ip.fk_inventaire)
             WHERE fk_entrepot = ".$entrepot." AND stock_confirm IS NULL AND fk_product = ".$fk_product;
+
     $result2 = $db->query($sql2);
     $num2 = $db->num_rows($result2);
 
@@ -313,9 +313,17 @@ if ($action == 'valider') {
     }else{
         $sql = "SELECT rowid
                 FROM ".MAIN_DB_PREFIX."inventaire 
-                WHERE fk_entrepot = ".$entrepot." AND CAST(date_creation AS DATE) = cast(NOW() AS DATE);";
+                WHERE fk_entrepot = ".$entrepot." AND CAST(date_creation AS DATE) = cast(NOW() AS DATE) AND rowid NOT IN 
+                (
+                    SELECT i.rowid 
+                    FROM ".MAIN_DB_PREFIX."inventaire AS i
+                    INNER JOIN ".MAIN_DB_PREFIX."inventaire_produit AS ip ON (i.rowid = ip.fk_inventaire)
+                    WHERE fk_product = ".$fk_product." 
+                );";
+
         $result = $db->query($sql);
         $num = $db->num_rows($result);
+
         if ($num > 0){
             $obj = $db->fetch_object($result);
             $id = $obj->rowid;
@@ -325,6 +333,7 @@ if ($action == 'valider') {
             $object->create($user);
             $id = $object->id;
         }
+
         $objp = new Inventaire_produit($db);
         $objp->fk_inventaire = $id;
         $objp->fk_product = $fk_product;

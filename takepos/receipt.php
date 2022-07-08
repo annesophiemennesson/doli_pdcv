@@ -159,6 +159,9 @@ if ($conf->global->TAKEPOS_SHOW_CUSTOMER) {
 		<th class="right"><?php if ($gift != 1) {
 			print $langs->trans("Price");
 						  } ?></th>
+		<th class="right"><?php if ($gift != 1) {
+			print "Remise";
+						} ?></th>
 		<?php  if (!empty($conf->global->TAKEPOS_SHOW_HT_RECEIPT)) { ?>
 		<th class="right"><?php if ($gift != 1) {
 			print $langs->trans("TotalHT");
@@ -177,6 +180,7 @@ if ($conf->global->TAKEPOS_SHOW_CUSTOMER) {
 		print '<td>' . GETPOST('label', 'alphanohtml') . '</td>';
 		print '<td class="right">' . $qty . '</td>';
 		print '<td class="right">' . price(price2num($object->total_ttc / $qty, 'MU'), 1) . '</td>';
+		print '<td class="right">-' . $object->remise_percent.'%</td>';
 		if (!empty($conf->global->TAKEPOS_SHOW_HT_RECEIPT)) {
 			print '<td class="right">' . price($object->total_ht, 1) . '</td>';
 		}
@@ -197,6 +201,9 @@ if ($conf->global->TAKEPOS_SHOW_CUSTOMER) {
 			<td class="right"><?php if ($gift != 1) {
 				echo price(price2num($line->total_ttc / $line->qty, 'MT'), 1);
 							  } ?></td>
+			<td class="right"><?php if ($gift != 1) {
+				echo '-'.$line->remise_percent.'%';
+							} ?></td>
 			<?php
 			if (!empty($conf->global->TAKEPOS_SHOW_HT_RECEIPT)) { ?>
 						<td class="right"><?php if ($gift != 1) {

@@ -31,6 +31,8 @@ create table llx_transfert_stock
     date_creation            datetime NOT NULL,                     -- date de creation de la demande de transfert
     date_valide              datetime DEFAULT NULL,                 -- date de validation de la demande
     date_prepa               datetime DEFAULT NULL,                 -- date de preparation du transfert
-    date_reception           datetime DEFAULT NULL                  -- date de reception du transfert
+    date_reception           datetime DEFAULT NULL,                  -- date de reception du transfert
+    model_pdf                varchar(255) default null,
+    last_main_doc            varchar(255) default null
 )ENGINE=innodb;
 

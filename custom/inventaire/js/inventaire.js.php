@@ -132,23 +132,35 @@ function confirmerinventaire(_pos){
     }else if (_comm.length == 0){
         alert(" ERREUR : Commentaire obligatoire ");
     }else{
-        $('select.autrelot').each(function(){
-            if ($(this).val() != ""){
-                let _num = $(this).attr('id').split('_')[1];		
-                let _batch = $(this).val(); 
-                let _qte = $('#autre_lot_'+_num).val();
-                let _input = "<input type='hidden' name='autrelot["+_batch+"]' value='"+_qte+"' />";
-                $('#inv_'+_pos).append(_input);
-            }
-        });
-        $.ajax({
-            type: "POST", 
-            url: "ajax/ajax.php?action=confirmer&token=<?php echo newToken(); ?>",
-            data: $('#inv_'+_pos).serialize()
-        })
-        .done(function (data) {
-			validOK(_pos);
-        });
+        let _err = "";
+        $('.lotform').remove();
+        if ($('select.autrelot').length > 0){
+            $('select.autrelot').each(function(){
+                if ($(this).val() != ""){
+                    let _num = $(this).attr('id').split('_')[1];		
+                    let _batch = $(this).val(); 
+                    let _qte = $('#autre_lot_'+_num).val();
+                    if ($('input[name="autrelot['+_batch+']"]').length > 0){
+                        _err += " ERREUR : Vous avez ajouté plusieurs fois le lot: #"+_batch;
+                    }else{
+                        let _input = "<input class='lotform' type='hidden' name='autrelot["+_batch+"]' value='"+_qte+"' />";
+                        $('#inv_'+_pos).append(_input);
+                    }
+                }
+            });
+        }
+        if (_err == ""){
+            $.ajax({
+                type: "POST", 
+                url: "ajax/ajax.php?action=confirmer&token=<?php echo newToken(); ?>",
+                data: $('#inv_'+_pos).serialize()
+            })
+            .done(function (data) {
+                validOK(_pos);
+            });
+        }else{
+            alert(_err);
+        }
     }
 }
 
