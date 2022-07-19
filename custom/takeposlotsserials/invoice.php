@@ -584,7 +584,7 @@ if ($action == "addline") {
 		
 		if ($nbofsuggested>0){
 		
-		echo "<center>Nous avons trouvé <b> $nbofsuggested </b> lot(s) / série(s)</center><br><table>";
+		echo "<center>Ce produit a <b> $nbofsuggested </b> lots</center><br><table>";
 
 		foreach ($prod->stock_warehouse[$conf->global->$constantforkey]->detail_batch as $dbatch)	// $dbatch is instance of Productbatch
 								{
@@ -607,7 +607,7 @@ if ($action == "addline") {
 									//print '<input name="batchl'.$indiceAsked.'_'.$subj.'" type="hidden" value="'.$dbatch->id.'">';
 
 									$detail = '';
-									$detail .= $langs->trans("Numéro de lot / série").': '.$dbatch->batch;
+									$detail .= $langs->trans("Numero de serie").': '.$dbatch->batch;
 									if (empty($conf->global->PRODUCT_DISABLE_SELLBY)) {
 										//$detail .= ' - '.$langs->trans("SellByDate").': '.dol_print_date($dbatch->sellby, "day");
 									}
@@ -615,7 +615,7 @@ if ($action == "addline") {
 										//$detail .= ' - '.$langs->trans("EatByDate").': '.dol_print_date($dbatch->eatby, "day");
 									}
 									$detail .= ' - '.$langs->trans("Qty").': '.$dbatch->qty;
-									$detail .= " <button onclick='addbatch(".$dbatch->id.")'>".$langs->trans('Select')."</button>";
+									$detail .= " <button onclick='addbatch(".$dbatch->id.")'>Selectionner</button>";
 									$detail .= '<br>';
 									print $detail;
 

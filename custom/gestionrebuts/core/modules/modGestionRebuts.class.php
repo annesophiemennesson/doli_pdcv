@@ -107,7 +107,7 @@ class modGestionRebuts extends DolibarrModules
 			'theme' => 0,
 			// Set this to relative path of css file if module has its own css file
 			'css' => array(
-				//    '/gestionrebuts/css/gestionrebuts.css.php',
+				'/gestionrebuts/css/gestionrebuts.css.php',
 			),
 			// Set this to relative path of js file if module must load a js on all pages
 			'js' => array(
@@ -264,21 +264,16 @@ class modGestionRebuts extends DolibarrModules
 		$r = 0;
 		// Add here entries to declare new permissions
 		/* BEGIN MODULEBUILDER PERMISSIONS */
-		/*$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
-		$this->rights[$r][1] = 'Read objects of GestionRebuts'; // Permission label
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Voir la liste des demandes d\'avoir'; // Permission label
 		$this->rights[$r][4] = 'demandeavoir';
 		$this->rights[$r][5] = 'read'; // In php code, permission will be checked by test if ($user->rights->gestionrebuts->demandeavoir->read)
 		$r++;
 		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
-		$this->rights[$r][1] = 'Create/Update objects of GestionRebuts'; // Permission label
+		$this->rights[$r][1] = 'Modifier les statuts des demandes d\'avoir'; // Permission label
 		$this->rights[$r][4] = 'demandeavoir';
 		$this->rights[$r][5] = 'write'; // In php code, permission will be checked by test if ($user->rights->gestionrebuts->demandeavoir->write)
 		$r++;
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
-		$this->rights[$r][1] = 'Delete objects of GestionRebuts'; // Permission label
-		$this->rights[$r][4] = 'demandeavoir';
-		$this->rights[$r][5] = 'delete'; // In php code, permission will be checked by test if ($user->rights->gestionrebuts->demandeavoir->delete)
-		$r++;*/
 		/* END MODULEBUILDER PERMISSIONS */
 
 		// Main menu entries to add

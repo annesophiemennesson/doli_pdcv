@@ -8264,7 +8264,6 @@ class Form
 
 		if (empty($reshook)) {
 			$nbofdifferenttypes = count($object->linkedObjects);
-
 			print '<!-- showLinkedObjectBlock -->';
 			print load_fiche_titre($langs->trans('RelatedObjects'), $morehtmlright, '', 0, 0, 'showlinkedobjectblock');
 
@@ -8364,13 +8363,24 @@ class Form
 					if (empty($conf->mrp->enabled)) {
 						continue; // Do not show if module disabled
 					}
-				}
+				}elseif ($objecttype == 'gestionrebuts_demandeavoir' || $objecttype == 'demandeavoir') {
+					$tplpath = 'custom/gestionrebuts';
+					if (empty($conf->gestionrebuts->enabled)) {
+						continue; // Do not show if module disabled
+					}
+				} elseif ($objecttype == 'retourclient') {
+					$tplpath = 'custom/retourclient';
+					if (empty($conf->retourclient->enabled)) {
+						continue; // Do not show if module disabled
+					}
+				} 
 
 				global $linkedObjectBlock;
 				$linkedObjectBlock = $objects;
 
 				// Output template part (modules that overwrite templates must declare this into descriptor)
 				$dirtpls = array_merge($conf->modules_parts['tpl'], array('/'.$tplpath.'/tpl'));
+
 				foreach ($dirtpls as $reldir) {
 					if ($nboftypesoutput == ($nbofdifferenttypes - 1)) {    // No more type to show after
 						global $noMoreLinkedObjectBlockAfter;

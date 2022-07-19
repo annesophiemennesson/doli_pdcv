@@ -3798,7 +3798,7 @@ abstract class CommonObject
 			$sql .= " ".$clause." (fk_target = ".((int) $targetid)." AND targettype = '".$this->db->escape($targettype)."')";
 		}
 		$sql .= ' ORDER BY '.$orderby;
-
+	
 		dol_syslog(get_class($this)."::fetchObjectLink", LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql) {
@@ -3866,7 +3866,11 @@ abstract class CommonObject
 						$module = 'adherent';
 					} elseif ($objecttype == 'contact') {
 						 $module = 'societe';
-					}
+					}elseif ($objecttype == 'gestionrebuts_demandeavoir' || $objecttype == 'demandeavoir') {
+						$module = 'gestionrebuts';
+						$classpath = 'custom/gestionrebuts/class';
+						$subelement = 'demandeavoir';
+				   }
 					// Set classfile
 					$classfile = strtolower($subelement);
 					$classname = ucfirst($subelement);
@@ -3908,7 +3912,9 @@ abstract class CommonObject
 						$classfile = 'mo';
 						$classname = 'Mo';
 						$module = 'mrp';
-					}
+					}elseif ($objecttype == 'gestionrebuts_demandeavoir' || $objecttype == 'demandeavoir') {
+						$classname = 'DemandeAvoir';
+				   }
 
 					// Here $module, $classfile and $classname are set, we can use them.
 					if ($conf->$module->enabled && (($element != $this->element) || $alsosametype)) {
@@ -4807,6 +4813,9 @@ abstract class CommonObject
 				}
 
 				$text .= ' - '.(!empty($line->label) ? $line->label : $label);
+				if (!empty($line->batch)){
+					$text .= ' (lot #'.$line->batch.')';
+				}
 				$description .= (!empty($conf->global->PRODUIT_DESC_IN_FORM) ? '' : dol_htmlentitiesbr($line->description)); // Description is what to show on popup. We shown nothing if already into desc.
 			}
 

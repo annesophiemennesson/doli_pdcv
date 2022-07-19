@@ -2,6 +2,7 @@
 /**
  * Copyright (C) 2018    Andreu Bisquerra    <jove@bisquerra.com>
  * Copyright (C) 2021    Nicolas ZABOURI    <info@inovea-conseil.com>
+ * Copyright (C) 2022    Anne-Sophie MENNESSON	<annesophie.mennesson@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +45,12 @@ if (!defined('NOREQUIREAJAX')) {
 }
 
 if (!defined('INCLUDE_PHONEPAGE_FROM_PUBLIC_PAGE')) {
-	require '../main.inc.php';
+	$res=0;
+$res=0;
+if (! $res && file_exists("../main.inc.php")) $res=@include("../main.inc.php");
+if (! $res && file_exists("../../main.inc.php")) $res=@include("../../main.inc.php");
+if (! $res && file_exists("../../../main.inc.php")) $res=@include("../../../main.inc.php");
+if (! $res) die("Include of main fails");
 }
 require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT.'/compta/paiement/class/paiement.class.php';
@@ -59,6 +65,7 @@ $action = GETPOST('action', 'aZ09');
 $idproduct = GETPOST('idproduct', 'int');
 $place = (GETPOST('place', 'aZ09') ? GETPOST('place', 'aZ09') : 0); // $place is id of table for Bar or Restaurant
 $placeid = 0; // $placeid is ID of invoice
+$batch = '';
 // Terminal is stored into $_SESSION["takeposterminal"];
 
 if (empty($user->rights->takepos->run) && !defined('INCLUDE_PHONEPAGE_FROM_PUBLIC_PAGE')) {
@@ -254,17 +261,17 @@ if ($action == 'valid' && $user->rights->facture->creer) {
 		$error++;
 		dol_syslog('Sale without lines');
 		dol_htmloutput_errors($langs->trans("NoLinesToBill", "TakePos"), null, 1);
-	} elseif (!empty($conf->stock->enabled) && $conf->global->$constantforkey != "1") {
+	} elseif (!empty($conf->stock->enabled) && $conf->global->$constantforkey != "1" && empty($conf->productbatch->enabled)) {
 		$savconst = $conf->global->STOCK_CALCULATE_ON_BILL;
 		$conf->global->STOCK_CALCULATE_ON_BILL = 1;
 
 		$constantforkey = 'CASHDESK_ID_WAREHOUSE'.$_SESSION["takeposterminal"];
 		dol_syslog("Validate invoice with stock change into warehouse defined into constant ".$constantforkey." = ".$conf->global->$constantforkey);
-		$batch_rule = 0;
+		/*$batch_rule = 0;
 		if (!empty($conf->productbatch->enabled) && !empty($conf->global->CASHDESK_FORCE_DECREASE_STOCK)) {
 			require_once DOL_DOCUMENT_ROOT.'/product/class/productbatch.class.php';
 			$batch_rule = Productbatch::BATCH_RULE_SELLBY_EATBY_DATES_FIRST;
-		}
+		}*/
 		$res = $invoice->validate($user, '', $conf->global->$constantforkey, 0, $batch_rule);
 
 		$conf->global->STOCK_CALCULATE_ON_BILL = $savconst;
@@ -324,6 +331,37 @@ if ($action == 'valid' && $user->rights->facture->creer) {
 	} else {
 		dol_htmloutput_errors($invoice->error, $invoice->errors, 1);
 	}
+	
+	/*if (!empty($conf->productbatch->enabled) && !empty($conf->stock->enabled)) {
+		$sql = "SELECT rowid, special_code FROM ".MAIN_DB_PREFIX."facturedet where fk_facture = ".((int) $placeid)." and special_code>0";
+		$resql = $db->query($sql);
+		if ($resql) {
+			while ($batch = $db->fetch_object($resql)) {
+				echo $batch->rowid;
+			}
+		}
+	}*/
+	
+	
+	// Update stock for batch products
+	// TODO ANSO
+	if (!empty($conf->productbatch->enabled)) {
+		require_once(DOL_DOCUMENT_ROOT . "/product/stock/class/mouvementstock.class.php");
+		$constantforkey = 'CASHDESK_ID_WAREHOUSE'.$_SESSION["takeposterminal"];
+		foreach ($invoice->lines as $line) {
+			if (!empty($line->batch)) {
+				$prod_batch = new Productbatch($db);
+				$prod_batch->fetch(0, $line->batch, $line->fk_product);
+				$mouvP = new MouvementStock($db);
+				$mouvP->livraison($user, $line->fk_product, $conf->global->$constantforkey, $line->qty, $line->price, 'TakePOS', '', '', '', $line->batch, $prod_batch->id);
+			}
+			else {
+				$mouvP = new MouvementStock($db);
+				$mouvP->livraison($user, $line->fk_product, $conf->global->$constantforkey, $line->qty, $line->price, 'TakePOS', '', '', '');
+			}
+		}
+	}
+	
 }
 
 if ($action == 'creditnote' && $user->rights->facture->creer) {
@@ -511,6 +549,102 @@ if ($action == "addline") {
 	$price_base_type = $datapriceofproduct['price_base_type'];
 	$tva_tx = $datapriceofproduct['tva_tx'];
 	$tva_npr = $datapriceofproduct['tva_npr'];
+	
+	
+	
+	// TODO ANSO
+	if (!empty($conf->productbatch->enabled) && !empty($conf->stock->enabled)) {
+		$batch = GETPOST('batch', '');
+		
+		if (!empty($batch)){
+			$action="setbatchid";
+			/*require_once(DOL_DOCUMENT_ROOT . "/product/stock/class/mouvementstock.class.php");
+			$constantforkey = 'CASHDESK_ID_WAREHOUSE'.$_SESSION["takeposterminal"];
+			$mouvP = new MouvementStock($db);
+			$mouvP->livraison($user, $idproduct, $conf->global->$constantforkey, 1, 1, 'TakePOS', '', '', '', $batchid);*/
+		}
+		
+		else {
+		$prod->load_stock('warehouseopen');
+		$constantforkey = 'CASHDESK_ID_WAREHOUSE'.$_SESSION["takeposterminal"];
+		if ($prod->stock_warehouse[$conf->global->$constantforkey]->detail_batch!="")
+		if (is_object($prod->stock_warehouse[$conf->global->$constantforkey]) && count($prod->stock_warehouse[$conf->global->$constantforkey]->detail_batch))
+							{
+								foreach ($prod->stock_warehouse[$conf->global->$constantforkey]->detail_batch as $dbatch)
+								{
+									$nbofsuggested++;
+								}
+							}
+		
+		// TODO ANSO					
+		echo "<script>";
+		echo "function addbatch(batch){";
+		echo '$("#poslines").load("invoice.php?action=addline&batch="+batch+"&place='.$place.'&idproduct='.$idproduct.'", function() {
+		});';
+		echo "}";
+		echo "</script>";					
+							
+		
+		
+		
+		if ($nbofsuggested>0){
+		
+		echo "<center>Ce produit a <b> $nbofsuggested </b> lots</center><br><table>";
+
+		foreach ($prod->stock_warehouse[$conf->global->$constantforkey]->detail_batch as $dbatch)	// $dbatch is instance of Productbatch
+								{
+									//var_dump($dbatch);
+									$batchStock = + $dbatch->qty; // To get a numeric
+									$deliverableQty = min($quantityToBeDelivered, $batchStock);
+									print '<!-- subj='.$subj.'/'.$nbofsuggested.' --><tr '.((($subj + 1) == $nbofsuggested) ? $bc[$var] : '').'>';
+									//print '<td colspan="3" ></td><td class="center">';
+									//print '<input class="qtyl" name="qtyl'.$indiceAsked.'_'.$subj.'" id="qtyl'.$indiceAsked.'_'.$subj.'" type="text" size="4" value="'.$deliverableQty.'">';
+									//print '</td>';
+
+									print '<!-- Show details of lot -->';
+									print '<td class="left">';
+									
+									$staticwarehouse = new Entrepot($db);
+									if ($warehouse_id > 0) $staticwarehouse->fetch($conf->global->$constantforkey);
+
+									//print .$staticwarehouse->getNomUrl(0).' / ';
+
+									//print '<input name="batchl'.$indiceAsked.'_'.$subj.'" type="hidden" value="'.$dbatch->id.'">';
+
+									$detail = '';
+									$detail .= 'Lot : #'.$dbatch->batch;
+									if (!empty($dbatch->eatby)) {
+										$detail .= ' (DLC: '.dol_print_date($dbatch->eatby, "%d/%m/%Y").')';
+									}
+									
+									// TODO ANSO
+									$detail .= ' - '.$langs->trans("Qty").': '.$dbatch->qty;
+									$detail .= " <button onclick='addbatch(".$dbatch->batch.")'>Sélectionner</button>";
+									$detail .= '<br>';
+									print $detail;
+
+									$quantityToBeDelivered -= $deliverableQty;
+									if ($quantityToBeDelivered < 0)
+									{
+										$quantityToBeDelivered = 0;
+									}
+									$subj++;
+									print '</td></tr>';
+				
+								}
+	print "</table>";
+	exit;
+		}
+		
+		
+		
+		
+		
+	}
+		
+	}
+	
+	
 
 	// Local Taxes
 	$localtax1_tx = get_localtax($tva_tx, 1, $customer, $mysoc, $tva_npr);
@@ -533,11 +667,12 @@ if ($action == "addline") {
 		}
 	}
 
+	//TODO ANSO
 	$idoflineadded = 0;
 	if (!empty($conf->global->TAKEPOS_GROUP_SAME_PRODUCT)) {
 		foreach ($invoice->lines as $line) {
-			if ($line->product_ref == $prod->ref) {
-				$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $line->qty + 1, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+			if ($line->product_ref == $prod->ref && (empty($batch) || $batch == $line->batch)) {
+				$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $line->qty + 1, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $batch);
 				if ($result < 0) {
 					dol_htmloutput_errors($invoice->error, $invoice->errors, 1);
 				} else {
@@ -547,9 +682,10 @@ if ($action == "addline") {
 			}
 		}
 	}
+	//TODO ANSO
 	if ($idoflineadded <= 0) {
 		$invoice->fetch_thirdparty();
-		$idoflineadded = $invoice->addline($prod->description, $price, 1, $tva_tx, $localtax1_tx, $localtax2_tx, $idproduct, $customer->remise_percent, '', 0, 0, 0, '', $price_base_type, $price_ttc, $prod->type, -1, 0, '', 0, (!empty($parent_line)) ? $parent_line : '', null, '', '', 0, 100, '', null, 0);
+		$idoflineadded = $invoice->addline($prod->description, $price, 1, $tva_tx, $localtax1_tx, $localtax2_tx, $idproduct, $customer->remise_percent, '', 0, 0, 0, '', $price_base_type, $price_ttc, $prod->type, -1, 0, '', 0, (!empty($parent_line)) ? $parent_line : '', null, '', '', 0, 100, '', null, 0, 0, '', $batch);
 		if (!empty($conf->global->TAKEPOS_CUSTOMER_DISPLAY)) {
 			$CUSTOMER_DISPLAY_line1 = $prod->label;
 			$CUSTOMER_DISPLAY_line2 = price($price_ttc);
@@ -586,7 +722,7 @@ if ($action == "addnote") {
 		$invoice->update_note($desc, '_public');
 	} else foreach ($invoice->lines as $line) {
 		if ($line->id == $idline) {
-			$result = $invoice->updateline($line->id, $desc, $line->subprice, $line->qty, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+			$result = $invoice->updateline($line->id, $desc, $line->subprice, $line->qty, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $line->batch);
 		}
 	}
 	$invoice->fetch($placeid);
@@ -654,7 +790,7 @@ if ($action == "updateqty") {
 			if (!$user->rights->takepos->editlines || (!$user->rights->takepos->editorderedlines && $line->special_code == "4")) {
 				dol_htmloutput_errors($langs->trans("NotEnoughPermissions", "TakePos"), null, 1);
 			} else {
-				$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $number, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+				$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $number, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $line->batch);
 			}
 		}
 	}
@@ -681,9 +817,9 @@ if ($action == "updateprice") {
 				if (empty($user->rights->takepos->editlines) || (empty($user->rights->takepos->editorderedlines) && $line->special_code == "4")) {
 					dol_htmloutput_errors($langs->trans("NotEnoughPermissions", "TakePos"), null, 1);
 				} elseif (getDolGlobalInt('TAKEPOS_CHANGE_PRICE_HT')  == 1) {
-					$result = $invoice->updateline($line->id, $line->desc, $number, $line->qty, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+					$result = $invoice->updateline($line->id, $line->desc, $number, $line->qty, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $line->batch);
 				} else {
-					$result = $invoice->updateline($line->id, $line->desc, $number, $line->qty, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'TTC', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+					$result = $invoice->updateline($line->id, $line->desc, $number, $line->qty, $line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'TTC', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $line->batch);
 				}
 			}
 		}
@@ -717,7 +853,7 @@ if ($action == "updatereduction") {
 				if (empty($user->rights->takepos->editlines) || (empty($user->rights->takepos->editorderedlines) && $line->special_code == "4")) {
 					dol_htmloutput_errors($langs->trans("NotEnoughPermissions", "TakePos"), null, 1);
 				} else {
-					$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $line->qty, $number, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+					$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $line->qty, $number, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $line->batch);
 				}
 			}
 		}
@@ -727,9 +863,16 @@ if ($action == "updatereduction") {
 	$invoice->fetch($placeid);
 } elseif ($action == 'update_reduction_global') {
 	foreach ($invoice->lines as $line) {
-		$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $line->qty, $number, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit);
+		$result = $invoice->updateline($line->id, $line->desc, $line->subprice, $line->qty, $number, $line->date_start, $line->date_end, $line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type, $line->fk_parent_line, 0, $line->fk_fournprice, $line->pa_ht, $line->label, $line->special_code, $line->array_options, $line->situation_percent, $line->fk_unit, 0, 0, '', $line->batch);
 	}
 
+	$invoice->fetch($placeid);
+}
+
+// TODO ANSO
+if ($action=="setbatchid"){
+	$sql = "UPDATE ".MAIN_DB_PREFIX."facturedet set batch='".$batch."' where rowid=".$idoflineadded;
+	$db->query($sql);
 	$invoice->fetch($placeid);
 }
 
@@ -1423,6 +1566,9 @@ if ($placeid > 0) {
 				if ($line->product_label) {
 					$htmlsupplements[$line->fk_parent_line] .= $line->product_label;
 				}
+				if (!empty($line->batch)){
+					$htmlsupplements[$line->fk_parent_line] .= ' (#'.$line->batch.')';
+				}
 				if ($line->product_label && $line->desc) {
 					$htmlsupplements[$line->fk_parent_line] .= '<br>';
 				}
@@ -1466,6 +1612,9 @@ if ($placeid > 0) {
 				if ($line->product_ref) {
 					$tooltiptext .= '<b>'.$langs->trans("Ref").'</b> : '.$line->product_ref.'<br>';
 					$tooltiptext .= '<b>'.$langs->trans("Label").'</b> : '.$line->product_label.'<br>';
+					if (!empty($line->batch)){
+						$tooltiptext .= '<b>Numéro de lot</b> : '.$line->batch.'<br>';
+					}
 					if ($line->product_label != $line->desc) {
 						if ($line->desc) {
 							$tooltiptext .= '<br>';
@@ -1473,7 +1622,12 @@ if ($placeid > 0) {
 						$tooltiptext .= $line->desc;
 					}
 				}
-				$htmlforlines .= $form->textwithpicto($line->product_label ? $line->product_label : ($line->product_ref ? $line->product_ref : dolGetFirstLineOfText($line->desc, 1)), $tooltiptext);
+				$text = $line->product_label ? $line->product_label : ($line->product_ref ? $line->product_ref : dolGetFirstLineOfText($line->desc, 1));
+				
+				if (!empty($line->batch)){
+					$text .= ' (#'.$line->batch.')';
+				}
+				$htmlforlines .= $form->textwithpicto($text, $tooltiptext);
 			} else {
 				if ($line->product_label) {
 					$htmlforlines .= $line->product_label;
@@ -1516,18 +1670,24 @@ if ($placeid > 0) {
 				if (!empty($conf->stock->enabled) && !empty($user->rights->stock->mouvement->lire)) {
 					$constantforkey = 'CASHDESK_ID_WAREHOUSE'.$_SESSION["takeposterminal"];
 					if (!empty($conf->global->$constantforkey) && $line->fk_product > 0) {
-						$sql = "SELECT e.rowid, e.ref, e.lieu, e.fk_parent, e.statut, ps.reel, ps.rowid as product_stock_id, p.pmp";
+						$sql = "SELECT e.rowid, e.ref, e.lieu, e.fk_parent, e.statut, ps.reel, ps.rowid as product_stock_id ";
+						if (!empty($line->batch)){
+							$sql .= " , b.qty";
+						}
 						$sql .= " FROM ".MAIN_DB_PREFIX."entrepot as e,";
 						$sql .= " ".MAIN_DB_PREFIX."product_stock as ps";
-						$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product as p ON p.rowid = ps.fk_product";
+						if (!empty($line->batch)){
+							$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product_batch AS b ON (b.fk_product_stock = ps.rowid AND b.batch = '".$line->batch."')";
+						}
 						$sql .= " WHERE ps.reel != 0";
 						$sql .= " AND ps.fk_entrepot = ".((int) $conf->global->$constantforkey);
 						$sql .= " AND e.entity IN (".getEntity('stock').")";
 						$sql .= " AND ps.fk_product = ".((int) $line->fk_product);
+
 						$resql = $db->query($sql);
 						if ($resql) {
 							$obj = $db->fetch_object($resql);
-							$stock_real = price2num($obj->reel, 'MS');
+							$stock_real = (empty($line->batch)) ? price2num($obj->reel, 'MS') : price2num($obj->qty, 'MS');
 							$htmlforlines .= $line->qty;
 							if ($line->qty && $line->qty > $stock_real) {
 								$htmlforlines .= '<span style="color: var(--amountremaintopaycolor)">';

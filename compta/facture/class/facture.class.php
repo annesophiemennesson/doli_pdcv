@@ -18,6 +18,7 @@
  * Copyright (C) 2018       Alexandre Spangaro		<aspangaro@open-dsi.fr>
  * Copyright (C) 2018       Nicolas ZABOURI         <info@inovea-conseil.com>
  * Copyright (C) 2022       Sylvain Legrand         <contact@infras.fr>
+ * Copyright (C) 2022       Anne-Sophie Mennesson   <annesophie.mennesson@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -850,7 +851,9 @@ class Facture extends CommonInvoice
 							$newinvoiceline->situation_percent,
 							$newinvoiceline->fk_prev_id,
 							$newinvoiceline->fk_unit,
-							$newinvoiceline->multicurrency_subprice
+							$newinvoiceline->multicurrency_subprice,
+							$newinvoiceline->ref_ext,
+							$newinvoiceline->batch
 						);
 
 						// Defined the new fk_parent_line
@@ -934,7 +937,8 @@ class Facture extends CommonInvoice
 							$line->fk_prev_id,
 							$line->fk_unit,
 							$line->multicurrency_subprice,
-							$line->ref_ext
+							$line->ref_ext,
+							$line->batch
 						);
 						if ($result < 0) {
 							$this->error = $this->db->lasterror();
@@ -1031,7 +1035,9 @@ class Facture extends CommonInvoice
 						$_facrec->lines[$i]->situation_percent,
 						'',
 						$_facrec->lines[$i]->fk_unit,
-						$_facrec->lines[$i]->multicurrency_subprice
+						$_facrec->lines[$i]->multicurrency_subprice,
+						$_facrec->lines[$i]->ref_ext,
+						$_facrec->lines[$i]->batch
 					);
 
 					if ($result_insert < 0) {
@@ -1157,6 +1163,7 @@ class Facture extends CommonInvoice
 				$facture->lines[$i]->total_localtax2 = -$facture->lines[$i]->total_localtax2;
 				$facture->lines[$i]->total_ttc = -$facture->lines[$i]->total_ttc;
 				$facture->lines[$i]->ref_ext = '';
+				$facture->lines[$i]->batch = -$facture->lines[$i]->batch;
 			}
 		}
 
@@ -1380,6 +1387,8 @@ class Facture extends CommonInvoice
 			$line->fk_fournprice = $object->lines[$i]->fk_fournprice;
 			$marginInfos			= getMarginInfos($object->lines[$i]->subprice, $object->lines[$i]->remise_percent, $object->lines[$i]->tva_tx, $object->lines[$i]->localtax1_tx, $object->lines[$i]->localtax2_tx, $object->lines[$i]->fk_fournprice, $object->lines[$i]->pa_ht);
 			$line->pa_ht			= $marginInfos[0];
+
+			$line->batch = $object->lines[$i]->batch;
 
 			// get extrafields from original line
 			$object->lines[$i]->fetch_optionals();
@@ -1816,7 +1825,7 @@ class Facture extends CommonInvoice
 		$sql .= ' l.rang, l.special_code,';
 		$sql .= ' l.date_start as date_start, l.date_end as date_end,';
 		$sql .= ' l.info_bits, l.total_ht, l.total_tva, l.total_localtax1, l.total_localtax2, l.total_ttc, l.fk_code_ventilation, l.fk_product_fournisseur_price as fk_fournprice, l.buy_price_ht as pa_ht,';
-		$sql .= ' l.fk_unit,';
+		$sql .= ' l.fk_unit, l.batch, ';
 		$sql .= ' l.fk_multicurrency, l.multicurrency_code, l.multicurrency_subprice, l.multicurrency_total_ht, l.multicurrency_total_tva, l.multicurrency_total_ttc,';
 		$sql .= ' p.ref as product_ref, p.fk_product_type as fk_product_type, p.label as product_label, p.description as product_desc';
 		$sql .= ' FROM '.MAIN_DB_PREFIX.'facturedet as l';
@@ -1892,6 +1901,8 @@ class Facture extends CommonInvoice
 				$line->multicurrency_total_ht 	= $objp->multicurrency_total_ht;
 				$line->multicurrency_total_tva 	= $objp->multicurrency_total_tva;
 				$line->multicurrency_total_ttc 	= $objp->multicurrency_total_ttc;
+
+				$line->batch 	= $objp->batch;
 
 				$line->fetch_optionals();
 
@@ -3208,6 +3219,7 @@ class Facture extends CommonInvoice
 	 *  @param 		string		$fk_unit 			Code of the unit to use. Null to use the default one
 	 *  @param		double		$pu_ht_devise		Unit price in foreign currency
 	 *  @param		string		$ref_ext		    External reference of the line
+	 * 	@param		string		$batch				Batch number
 	 *  @return    	int             				<0 if KO, Id of line if OK
 	 */
 	public function addline(
@@ -3240,7 +3252,8 @@ class Facture extends CommonInvoice
 		$fk_prev_id = 0,
 		$fk_unit = null,
 		$pu_ht_devise = 0,
-		$ref_ext = ''
+		$ref_ext = '',
+		$batch = ''
 	) {
 		// Deprecation warning
 		if ($label) {
@@ -3432,6 +3445,8 @@ class Facture extends CommonInvoice
 			$this->line->multicurrency_total_tva = (($this->type == self::TYPE_CREDIT_NOTE || $qty < 0) ? -abs($multicurrency_total_tva) : $multicurrency_total_tva); // For credit note and if qty is negative, total is negative
 			$this->line->multicurrency_total_ttc = (($this->type == self::TYPE_CREDIT_NOTE || $qty < 0) ? -abs($multicurrency_total_ttc) : $multicurrency_total_ttc); // For credit note and if qty is negative, total is negative
 
+			$this->line->batch = $batch;
+			
 			if (is_array($array_options) && count($array_options) > 0) {
 				$this->line->array_options = $array_options;
 			}
@@ -3494,9 +3509,10 @@ class Facture extends CommonInvoice
 	 * 	@param		double		$pu_ht_devise		Unit price in currency
 	 * 	@param		int			$notrigger			disable line update trigger
 	 *  @param		string		$ref_ext		    External reference of the line
+	 *  @param		string		$batch			    Batch number
 	 *  @return    	int             				< 0 if KO, > 0 if OK
 	 */
-	public function updateline($rowid, $desc, $pu, $qty, $remise_percent, $date_start, $date_end, $txtva, $txlocaltax1 = 0, $txlocaltax2 = 0, $price_base_type = 'HT', $info_bits = 0, $type = self::TYPE_STANDARD, $fk_parent_line = 0, $skip_update_total = 0, $fk_fournprice = null, $pa_ht = 0, $label = '', $special_code = 0, $array_options = 0, $situation_percent = 100, $fk_unit = null, $pu_ht_devise = 0, $notrigger = 0, $ref_ext = '')
+	public function updateline($rowid, $desc, $pu, $qty, $remise_percent, $date_start, $date_end, $txtva, $txlocaltax1 = 0, $txlocaltax2 = 0, $price_base_type = 'HT', $info_bits = 0, $type = self::TYPE_STANDARD, $fk_parent_line = 0, $skip_update_total = 0, $fk_fournprice = null, $pa_ht = 0, $label = '', $special_code = 0, $array_options = 0, $situation_percent = 100, $fk_unit = null, $pu_ht_devise = 0, $notrigger = 0, $ref_ext = '', $batch = '')
 	{
 		global $conf, $user;
 		// Deprecation warning
@@ -3670,6 +3686,8 @@ class Facture extends CommonInvoice
 			$this->line->multicurrency_total_ht 	= (($this->type == self::TYPE_CREDIT_NOTE || $qty < 0) ?-abs($multicurrency_total_ht) : $multicurrency_total_ht); // For credit note and if qty is negative, total is negative
 			$this->line->multicurrency_total_tva 	= (($this->type == self::TYPE_CREDIT_NOTE || $qty < 0) ?-abs($multicurrency_total_tva) : $multicurrency_total_tva);
 			$this->line->multicurrency_total_ttc 	= (($this->type == self::TYPE_CREDIT_NOTE || $qty < 0) ?-abs($multicurrency_total_ttc) : $multicurrency_total_ttc);
+
+			$this->line->batch = $batch;
 
 			if (is_array($array_options) && count($array_options) > 0) {
 				// We replace values in this->line->array_options only for entries defined into $array_options
@@ -5269,6 +5287,8 @@ class FactureLigne extends CommonInvoiceLine
 	public $multicurrency_total_tva;
 	public $multicurrency_total_ttc;
 
+	public $batch;
+
 	/**
 	 *	Load invoice line from database
 	 *
@@ -5288,7 +5308,7 @@ class FactureLigne extends CommonInvoiceLine
 		$sql .= ' fd.multicurrency_total_ht,';
 		$sql .= ' fd.multicurrency_total_tva,';
 		$sql .= ' fd.multicurrency_total_ttc,';
-		$sql .= ' p.ref as product_ref, p.label as product_label, p.description as product_desc';
+		$sql .= ' p.ref as product_ref, p.label as product_label, p.description as product_desc, batch';
 		$sql .= ' FROM '.MAIN_DB_PREFIX.'facturedet as fd';
 		$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'product as p ON fd.fk_product = p.rowid';
 		$sql .= ' WHERE fd.rowid = '.((int) $rowid);
@@ -5349,6 +5369,8 @@ class FactureLigne extends CommonInvoiceLine
 			$this->multicurrency_total_ht = $objp->multicurrency_total_ht;
 			$this->multicurrency_total_tva = $objp->multicurrency_total_tva;
 			$this->multicurrency_total_ttc = $objp->multicurrency_total_ttc;
+
+			$this->batch = $objp->batch;
 
 			$this->db->free($result);
 
@@ -5479,7 +5501,7 @@ class FactureLigne extends CommonInvoiceLine
 		$sql .= ' info_bits, total_ht, total_tva, total_ttc, total_localtax1, total_localtax2,';
 		$sql .= ' situation_percent, fk_prev_id,';
 		$sql .= ' fk_unit, fk_user_author, fk_user_modif,';
-		$sql .= ' fk_multicurrency, multicurrency_code, multicurrency_subprice, multicurrency_total_ht, multicurrency_total_tva, multicurrency_total_ttc';
+		$sql .= ' fk_multicurrency, multicurrency_code, multicurrency_subprice, multicurrency_total_ht, multicurrency_total_tva, multicurrency_total_ttc, batch';
 		$sql .= ')';
 		$sql .= " VALUES (".$this->fk_facture.",";
 		$sql .= " ".($this->fk_parent_line > 0 ? $this->fk_parent_line : "null").",";
@@ -5522,6 +5544,7 @@ class FactureLigne extends CommonInvoiceLine
 		$sql .= ", ".price2num($this->multicurrency_total_ht);
 		$sql .= ", ".price2num($this->multicurrency_total_tva);
 		$sql .= ", ".price2num($this->multicurrency_total_ttc);
+		$sql .= ", '".$this->db->escape($this->batch)."'";
 		$sql .= ')';
 
 		dol_syslog(get_class($this)."::insert", LOG_DEBUG);
@@ -5713,6 +5736,7 @@ class FactureLigne extends CommonInvoiceLine
 		$sql .= ", product_type=".$this->product_type;
 		$sql .= ", info_bits='".$this->db->escape($this->info_bits)."'";
 		$sql .= ", special_code='".$this->db->escape($this->special_code)."'";
+		$sql .= ", batch='".$this->db->escape($this->batch)."'";
 		if (empty($this->skip_update_total)) {
 			$sql .= ", total_ht=".price2num($this->total_ht);
 			$sql .= ", total_tva=".price2num($this->total_tva);

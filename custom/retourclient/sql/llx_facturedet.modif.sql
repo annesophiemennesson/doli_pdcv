@@ -1,0 +1,1 @@
+ALTER TABLE llx_facturedet ADD COLUMN batch VARCHAR(128) DEFAULT NULL;

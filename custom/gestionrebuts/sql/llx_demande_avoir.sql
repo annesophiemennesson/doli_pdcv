@@ -21,7 +21,7 @@ create table llx_demande_avoir
     rowid					integer AUTO_INCREMENT PRIMARY KEY,
     fk_reception            integer NOT NULL,                                           -- lien avec la reception
     fk_user                 integer NOT NULL,                                           -- lien avec l'utilisateur qui fait la demande
-    statut                  ENUM("ouverte", "validée", "annulée") Default "ouverte",    -- statut de la demande d'avoir
+    statut                  ENUM("en attente", "validée producteur", "validée pdcv", "refusée") Default "en attente",    -- statut de la demande d'avoir
     commentaire             varchar(255) DEFAULT NULL,                                  -- commentaire
     date_creation           datetime default NULL,                                      -- date
     model_pdf               varchar(255) default null,

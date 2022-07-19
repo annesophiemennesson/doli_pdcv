@@ -195,7 +195,7 @@ if (! empty($conf->transfertstockinterne->enabled) && $user->rights->transfertst
 						print '<td>'.$obj->qte_vendue.'</td>';
 						print '<td>'.price2num($obj->stock_magasin, 'MS').'</td>';
 						print '<td><input type="number" class="flat" step="0.01" min="0" max="'.$obj->stock_depot.'" name="qte['.$obj->fk_product.']" value="0" required /></td>';
-						print '<td><input type="text" class="flat" value="" name="comment['.$obj->fk_product.']"</td>';
+						print '<td><input type="text" class="flat" value="" name="comment['.$obj->fk_product.']" /></td>';
 						print '</tr>';
 						$i++;
 					}

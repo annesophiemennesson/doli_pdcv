@@ -59,9 +59,9 @@ $action = GETPOST('action', 'aZ09');
 $id = GETPOST('id', 'int');
 
 // Security check
-/*if (! $user->rights->transfertstockinterne->transfert_stock->detail) {
+if (! $user->rights->gestionrebuts->demandeavoir->read) {
 	accessforbidden();
-}*/
+}
 
 $socid = GETPOST('socid', 'int');
 if (isset($user->socid) && $user->socid > 0) {
@@ -95,49 +95,62 @@ if ($action == 'builddoc') {
 
 	$object = new DemandeAvoir($db);
 	$object->fetch($id);
-    $object->statut = $statut;
-    $object->commentaire = $commentaire. " (produits: ".$destination.")";
-    $object->update($user);	
 
-	$object->loadProduits();
+	$old_statut = $object->statut;
+	if ($old_statut != $statut){
 
-	$sql2 = "SELECT rowid FROM ".MAIN_DB_PREFIX."entrepot WHERE ref = 'Rebut'";
-	$res2 = $db->query($sql2);
-	$obj = $db->fetch_object($res2);
-	$entrepot_rebut = $obj->rowid;
+		$comm = "[".$old_statut." => ".$statut."]";
+	
+		$object->statut = $statut;
+		$object->commentaire .= " [".dol_print_date($now, "%d/%m/%Y %H:%M:%S")."] ".$comm." ".$commentaire;
+		if ($statut == 'refusée' || $statut == 'validée pdcv'){
+			$object->commentaire .= " (produits: ".$destination.")";
+		}
+		$object->update($user);	
 
-
-	foreach ($object->lines as $prod){
-		$produit = new Product($db);
-		$result = $produit->fetch($prod['fk_product']);
+		if ($statut == 'refusée' || $statut == 'validée pdcv'){
+			$object->loadProduits();
+	
+			$sql2 = "SELECT rowid FROM ".MAIN_DB_PREFIX."entrepot WHERE ref = 'Rebut'";
+			$res2 = $db->query($sql2);
+			$obj = $db->fetch_object($res2);
+			$entrepot_rebut = $obj->rowid;
 		
-		if (empty($prod['batch'])){
-			// Remove stock
-			$result1 = $produit->correct_stock(
-				$user,
-				$entrepot_rebut,
-				$prod['qty'],
-				1,
-				$destination,
-				0,
-				""
-			);
-		}else{
-			// Remove stock
-			$result1 = $produit->correct_stock_batch(
-				$user,
-				$entrepot_rebut,
-				$prod['qty'],
-				1,
-				$destination,
-				0,
-				"",
-				"",
-				$prod['batch'],
-				""
-			);
+		
+			foreach ($object->lines as $prod){
+				$produit = new Product($db);
+				$result = $produit->fetch($prod['fk_product']);
+				
+				if (empty($prod['batch'])){
+					// Remove stock
+					$result1 = $produit->correct_stock(
+						$user,
+						$entrepot_rebut,
+						$prod['qty'],
+						1,
+						$destination,
+						0,
+						""
+					);
+				}else{
+					// Remove stock
+					$result1 = $produit->correct_stock_batch(
+						$user,
+						$entrepot_rebut,
+						$prod['qty'],
+						1,
+						$destination,
+						0,
+						"",
+						"",
+						$prod['batch'],
+						""
+					);
+				}
+			}
 		}
 	}
+
 
 }
 
@@ -155,7 +168,7 @@ print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
-if (!empty($id) /*&& ! empty($conf->transfertstockinterne->enabled) && $user->rights->transfertstockinterne->transfert_stock->detail*/)
+if (!empty($id) && ! empty($conf->gestionrebuts->enabled) && $user->rights->gestionrebuts->demandeavoir->read)
 {
     $sql = "SELECT a.fk_reception, a.commentaire, a.statut, r.ref, a.date_creation, CONCAT(lastname, \" \", firstname) AS user, nom
             FROM ".MAIN_DB_PREFIX."demande_avoir AS a
@@ -166,22 +179,30 @@ if (!empty($id) /*&& ! empty($conf->transfertstockinterne->enabled) && $user->ri
 	
 	$resql = $db->query($sql);
 	$obj = $db->fetch_object($resql);
+	$object = new DemandeAvoir($db);
+	$object->fetch($id);
+	$object->fetchObjectLinked();
 
 	print '<h3>Demande d\'avoir n°'.$id.'</h3>';
 	print '<div id="container"><div class="col-xs-6">';    
 	print '<p>Faite le '.dol_print_date($obj->date_creation, "%d/%m/%Y %H:%M:%S").' par '.$obj->user.'</p>';
-    print '<p>Fournisseur: '.$obj->nom.', Réception: <a href="'.dol_buildpath('/reception/card.php?id='.$obj->fk_reception, 1).'" target="_blank">'.$obj->ref.'</a></p>';
+    print '<p>Fournisseur: '.$obj->nom.'</p>';
     print '<form action="detail.php?action=change&id='.$id.'&&token='.newToken().'" method="post">';
     print '<p>Statut: ';
-	if ($obj->statut == "ouverte"){
+	if ($obj->statut == "en attente" || $obj->statut == "validée producteur"){
 		print '<select name="statut">';
-		print '<option '.($obj->statut == "ouverte" ? "selected" : "").' value="ouverte">Ouverte</option>';
-		print '<option '.($obj->statut == "validée" ? "selected" : "").' value="validée">Validée</option>';
-		print '<option '.($obj->statut == "annulée" ? "selected" : "").' value="annulée">Annulée</option>';
+		if ($obj->statut == "en attente"){
+			print '<option '.($obj->statut == "en attente" ? "selected" : "").' value="ouverte">En attente</option>';
+		}		
+		print '<option '.($obj->statut == "validée producteur" ? "selected" : "").' value="validée producteur">Validée par le producteur</option>';
+		print '<option '.($obj->statut == "validée pdcv" ? "selected" : "").' value="validée pdcv">Validée par pdcv</option>';
+		print '<option '.($obj->statut == "refusée" ? "selected" : "").' value="refusée">Refusée</option>';
 		print '</select></p>';
-		print '<p>Commentaire: <input required type="text" name="commentaire" value="'.$obj->commentaire.'" /></p>';
-		print '<p>Destination des produits: <select name="destination"><option value="retour producteur">Retour fournisseur</option><option value="destruction">Destruction</option></select>';
-		print '<p><button type="submit" class="butAction">Changer</button></p>';
+		print '<p>Commentaire: '.$obj->commentaire.'<br/><input required type="text" name="commentaire" value="" /></p>';
+		print '<p>Destination des produits (si refus ou validation pdcv): <select name="destination"><option value="retour producteur">Retour fournisseur</option><option value="destruction">Destruction</option></select>';
+		if ($user->rights->gestionrebuts->demandeavoir->write){
+			print '<p><button type="submit" class="butAction">Changer</button></p>';
+		}
 	}else{
 		print $obj->statut.'</p>';
 		print '<p>Commentaire: '.$obj->commentaire.'</p>';
@@ -195,6 +216,10 @@ if (!empty($id) /*&& ! empty($conf->transfertstockinterne->enabled) && $user->ri
 	$filedir = $conf->gestionrebuts->dir_output."/".$objectref;
 	$urlsource = $_SERVER["PHP_SELF"]."?id=".$id;
 	print $formfile->showdocuments('gestionrebuts:demandeavoir', $objectref, $filedir, $urlsource, 1, 0, "demandeavoir", 1, 0, 0, 28, 0, '', '', '', '');
+	
+	$form = new Form($db);
+	$somethingshown = $form->showLinkedObjectBlock($object, '');
+
 	print '</div></div>';
 
     $sql = "SELECT fk_product, qty, d.price, commentaire, eatby, batch, label

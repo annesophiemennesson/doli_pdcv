@@ -56,10 +56,10 @@ $action = GETPOST('action', 'aZ09');
 $message = GETPOST('message', 'alpha');
 
 // Security check
-/*if (! $user->rights->transfertstockinterne->transfert_stock->list) {
+if (! $user->rights->gestionrebuts->demandeavoir->read) {
 	accessforbidden();
 }
-*/
+
 
 
 $socid = GETPOST('socid', 'int');
@@ -82,23 +82,23 @@ $now = dol_now();
  */
 
 
-llxHeader("", "Liste des demandes d'avoir'");
+llxHeader("", "Liste des demandes d'avoir");
 
-print load_fiche_titre("Liste des demandes d'avoir'", '', '');
+print load_fiche_titre("Liste des demandes d'avoir", '', '');
 
 print '<div class="fichecenter">';
 
 // BEGIN MODULEBUILDER DRAFT MYOBJECT
 // Draft MyObject
 
-if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockinterne->transfert_stock->list*/)
+if (! empty($conf->gestionrebuts->enabled) && $user->rights->gestionrebuts->demandeavoir->read)
 {
 	$sql = "SELECT a.rowid, a.date_creation, nom, COUNT(fk_product) AS nb, SUM(qty * price) AS totalHT, fk_reception
 			FROM ".MAIN_DB_PREFIX."demande_avoir AS a
 			INNER JOIN ".MAIN_DB_PREFIX."reception AS r ON (a.fk_reception = r.rowid)
 			INNER JOIN ".MAIN_DB_PREFIX."societe AS s ON (r.fk_soc = s.rowid)
 			INNER JOIN ".MAIN_DB_PREFIX."demande_avoirdet AS d ON (d.fk_demande_avoir = a.rowid)
-			WHERE a.statut = \"ouverte\"
+			WHERE a.statut = \"en attente\"
 			GROUP BY a.rowid;";
 
 	$resql = $db->query($sql);
@@ -107,7 +107,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
 		$total = 0;
 		$num = $db->num_rows($resql);
 
-		print '<h3>Liste des demandes ouvertes</h3>';
+		print '<h3>Liste des demandes en attente</h3>';
 		print '<table class="noborder centpercent">';
 		print '<tr class="liste_titre">';
 		print '<th>Id</th><th>Fournisseur</th><th>Date création</th><th>Nb produits</th><th>Total HT</th></tr>';
@@ -123,7 +123,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
                 print '<td><a href="'.dol_buildpath('/reception/card.php?id='.$obj->fk_reception, 1).'" target="_blank">'.$obj->nom.'</a></td>';
                 print '<td>'.dol_print_date($obj->date_creation, "%d/%m/%Y %H:%M:%S").'</td>';
                 print '<td>'.$obj->nb.'</td>';
-                print '<td>'.$obj->totalHT.'</td>';
+                print '<td>'.price2num($obj->totalHT, 'MS').'</td>';
                 print '</tr>';
 				$i++;
 			}
@@ -147,7 +147,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
 			INNER JOIN ".MAIN_DB_PREFIX."reception AS r ON (a.fk_reception = r.rowid)
 			INNER JOIN ".MAIN_DB_PREFIX."societe AS s ON (r.fk_soc = s.rowid)
 			INNER JOIN ".MAIN_DB_PREFIX."demande_avoirdet AS d ON (d.fk_demande_avoir = a.rowid)
-			WHERE a.statut = \"validée\"
+			WHERE a.statut = \"validée producteur\"
 			GROUP BY a.rowid;";
 
 	$resql = $db->query($sql);
@@ -156,7 +156,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
 		$total = 0;
 		$num = $db->num_rows($resql);
 
-		print '<h3>Liste des demandes validées</h3>';
+		print '<h3>Liste des demandes validées par le producteur</h3>';
 		print '<table class="noborder centpercent">';
 		print '<tr class="liste_titre">';
 		print '<th>Id</th><th>Fournisseur</th><th>Date création</th><th>Nb produits</th><th>Total HT</th></tr>';
@@ -172,7 +172,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
                 print '<td><a href="'.dol_buildpath('/reception/card.php?id='.$obj->fk_reception, 1).'" target="_blank">'.$obj->nom.'</a></td>';
                 print '<td>'.dol_print_date($obj->date_creation, "%d/%m/%Y %H:%M:%S").'</td>';
                 print '<td>'.$obj->nb.'</td>';
-                print '<td>'.$obj->totalHT.'</td>';
+                print '<td>'.price2num($obj->totalHT, 'MS').'</td>';
                 print '</tr>';
 				$i++;
 			}
@@ -196,7 +196,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
 			INNER JOIN ".MAIN_DB_PREFIX."reception AS r ON (a.fk_reception = r.rowid)
 			INNER JOIN ".MAIN_DB_PREFIX."societe AS s ON (r.fk_soc = s.rowid)
 			INNER JOIN ".MAIN_DB_PREFIX."demande_avoirdet AS d ON (d.fk_demande_avoir = a.rowid)
-			WHERE a.statut = \"annulées\"
+			WHERE a.statut = \"validée pdcv\"
 			GROUP BY a.rowid;";
 
 	$resql = $db->query($sql);
@@ -205,7 +205,7 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
 		$total = 0;
 		$num = $db->num_rows($resql);
 
-		print '<h3>Liste des demandes annulées</h3>';
+		print '<h3>Liste des demandes validées par pdcv</h3>';
 		print '<table class="noborder centpercent">';
 		print '<tr class="liste_titre">';
 		print '<th>Id</th><th>Fournisseur</th><th>Date création</th><th>Nb produits</th><th>Total HT</th></tr>';
@@ -221,7 +221,56 @@ if (! empty($conf->gestionrebuts->enabled) /*&& $user->rights->transfertstockint
                 print '<td><a href="'.dol_buildpath('/reception/card.php?id='.$obj->fk_reception, 1).'" target="_blank">'.$obj->nom.'</a></td>';
                 print '<td>'.dol_print_date($obj->date_creation, "%d/%m/%Y %H:%M:%S").'</td>';
                 print '<td>'.$obj->nb.'</td>';
-                print '<td>'.$obj->totalHT.'</td>';
+                print '<td>'.price2num($obj->totalHT, 'MS').'</td>';
+                print '</tr>';
+				$i++;
+			}
+        }
+		else
+		{
+			print '<tr class="oddeven"><td colspan="5" class="center">Aucune demande</td></tr>';
+		}
+		print "</table><br>";
+
+		$db->free($resql);
+	}
+	else
+	{
+		dol_print_error($db);
+	}
+
+
+	$sql = "SELECT a.rowid, a.date_creation, nom, COUNT(fk_product) AS nb, SUM(qty * price) AS totalHT, fk_reception
+			FROM ".MAIN_DB_PREFIX."demande_avoir AS a
+			INNER JOIN ".MAIN_DB_PREFIX."reception AS r ON (a.fk_reception = r.rowid)
+			INNER JOIN ".MAIN_DB_PREFIX."societe AS s ON (r.fk_soc = s.rowid)
+			INNER JOIN ".MAIN_DB_PREFIX."demande_avoirdet AS d ON (d.fk_demande_avoir = a.rowid)
+			WHERE a.statut = \"refusée\"
+			GROUP BY a.rowid;";
+
+	$resql = $db->query($sql);
+	if ($resql)
+	{
+		$total = 0;
+		$num = $db->num_rows($resql);
+
+		print '<h3>Liste des demandes refusées</h3>';
+		print '<table class="noborder centpercent">';
+		print '<tr class="liste_titre">';
+		print '<th>Id</th><th>Fournisseur</th><th>Date création</th><th>Nb produits</th><th>Total HT</th></tr>';
+		if ($num > 0)
+		{
+			$i = 0;
+			while ($i < $num)
+			{
+
+				$obj = $db->fetch_object($resql);
+				print '<tr class="oddeven">';
+				print '<td><a target="_blank" href="'.dol_buildpath('/custom/gestionrebuts/detail.php?id='.$obj->rowid, 1).'">'.$obj->rowid.'</a></td>';
+                print '<td><a href="'.dol_buildpath('/reception/card.php?id='.$obj->fk_reception, 1).'" target="_blank">'.$obj->nom.'</a></td>';
+                print '<td>'.dol_print_date($obj->date_creation, "%d/%m/%Y %H:%M:%S").'</td>';
+                print '<td>'.$obj->nb.'</td>';
+                print '<td>'.price2num($obj->totalHT, 'MS').'</td>';
                 print '</tr>';
 				$i++;
 			}

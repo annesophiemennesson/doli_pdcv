@@ -15,6 +15,7 @@
  * Copyright (C) 2014-2019  Ferran Marcet           <fmarcet@2byte.es>
  * Copyright (C) 2015-2016  Marcos García           <marcosgdf@gmail.com>
  * Copyright (C) 2018-2021  Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2022		Anne-Sophie MENNESSON	<annesophie.mennesson@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -5335,6 +5336,9 @@ if ($action == 'create') {
 				} else {
 					print '<span class="butActionRefused classfortooltip" title="'.$langs->trans("DisabledBecauseDispatchedInBookkeeping").'">'.$langs->trans('Modify').'</span>';
 				}
+			}
+			if ($object->statut == Facture::STATUS_CLOSED && ($object->type == Facture::TYPE_STANDARD || $object->type == Facture::TYPE_REPLACEMENT)){
+				print '<a class="butAction butRetour" href="'.dol_buildpath('/custom/retourclient/new.php?id='.$object->id, 1).'">Enregistrer retour</a>';
 			}
 
 			$discount = new DiscountAbsolute($db);

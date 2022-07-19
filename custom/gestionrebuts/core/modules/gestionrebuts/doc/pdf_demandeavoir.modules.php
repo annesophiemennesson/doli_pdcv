@@ -260,7 +260,7 @@ class pdf_demandeavoir extends ModelePDFDemandeAvoir
 				$dir = $conf->gestionrebuts->dir_output.'/';
 				$file = $dir."/SPECIMEN.pdf";
 			} else {
-				$objectref = dol_sanitizeFileName('DemandeAvoir_'.$object->id.'_'.date('YmdHis'));
+				$objectref = dol_sanitizeFileName('DemandeAvoir_'.$object->id);
 				$dir = $conf->gestionrebuts->dir_output.'/'.$object->id;
 				$file = $dir."/".$objectref.".pdf";
 			}

@@ -129,9 +129,11 @@ class Productbatch extends CommonObject
 	 *  Load object in memory from the database
 	 *
 	 *  @param	int		$id		Id object
+	 *  @param string	$batch
+	 *  @param int		$prod
 	 *  @return int          	<0 if KO, >0 if OK
 	 */
-	public function fetch($id)
+	public function fetch($id, $batch = "", $prod = 0)
 	{
 		global $langs;
 		$sql = "SELECT";
@@ -151,7 +153,11 @@ class Productbatch extends CommonObject
 
 		$sql .= " FROM ".MAIN_DB_PREFIX."product_batch as t INNER JOIN ".MAIN_DB_PREFIX."product_stock w on t.fk_product_stock = w.rowid";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."product_lot as pl on pl.fk_product = w.fk_product and pl.batch = t.batch";
-		$sql .= " WHERE t.rowid = ".((int) $id);
+		if (!empty($batch)){
+			$sql .= " WHERE t.batch = '".$batch."' and w.fk_product = ".$prod;
+		}else{
+			$sql .= " WHERE t.rowid = ".((int) $id);
+		}
 
 		dol_syslog(get_class($this)."::fetch", LOG_DEBUG);
 		$resql = $this->db->query($sql);

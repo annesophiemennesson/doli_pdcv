@@ -32,10 +32,6 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
  */
 class DemandeAvoir extends CommonObject
 {
-	/**
-	 * @var string ID of module.
-	 */
-	public $module = 'gestionrebuts';
 
 	/**
 	 * @var string ID to identify managed object.
@@ -71,7 +67,7 @@ class DemandeAvoir extends CommonObject
 		'rowid' =>array('type'=>'integer', 'label'=>'TechnicalID', 'enabled'=>1, 'visible'=>-1, 'notnull'=>1, 'position'=>10),
 		'fk_reception' =>array('type'=>'integer', 'label'=>'Fkreception', 'enabled'=>1, 'visible'=>-1, 'notnull'=>1, 'position'=>15),
 		'fk_user' =>array('type'=>'integer', 'label'=>'Fkuser', 'enabled'=>1, 'visible'=>-1, 'notnull'=>1, 'position'=>15),
-		'statut' =>array('type'=>'enum(\'ouverte\',\'validée\',\'annulée\')', 'label'=>'Statut', 'enabled'=>1, 'visible'=>-1, 'position'=>500),
+		'statut' =>array('type'=>'enum(\'en attente\',\'validée producteur\', \'validée pdcv\',\'refusée\')', 'label'=>'Statut', 'enabled'=>1, 'visible'=>-1, 'position'=>500),
 		'commentaire' =>array('type'=>'varchar(255)', 'label'=>'Commentaire', 'enabled'=>1, 'visible'=>-1, 'position'=>25),
 		'date_creation' =>array('type'=>'datetime', 'label'=>'Datecreation', 'enabled'=>1, 'visible'=>-1, 'position'=>30),
 		'model_pdf' =>array('type'=>'varchar(255)', 'label'=>'Modelpdf', 'enabled'=>1, 'visible'=>0, 'position'=>35),
@@ -179,6 +175,16 @@ class DemandeAvoir extends CommonObject
 
 		if (!$error) {
 			$this->id = $this->db->last_insert_id(MAIN_DB_PREFIX . "demande_avoir");
+		}
+		
+
+		// Add object linked
+		if (!$error) {
+			$ret = $this->add_object_linked("reception", $this->fk_reception);
+			if (!$ret) {
+				$this->error = $this->db->lasterror();
+				$error++;
+			}
 		}
 
 		// Commit or rollback
